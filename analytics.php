@@ -2,7 +2,6 @@
 session_start();
 require 'db_connection.php';
 
-// Check if user is logged in
 if (!isset($_SESSION['employee_id'])) {
     header("Location: index.html");
     exit();
@@ -63,11 +62,11 @@ $dateRange = getDateRange($period);
 // AJAX endpoint for data
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
-    
+
     switch ($_GET['ajax']) {
         case 'metrics':
             $metrics = [];
-            
+
             // Total visitors for period
             $result = $conn->query("
                 SELECT COUNT(*) as total 
@@ -75,7 +74,7 @@ if (isset($_GET['ajax'])) {
                 WHERE DATE(created_at) BETWEEN '{$dateRange['start']}' AND '{$dateRange['end']}'
             ");
             $metrics['totalVisitors'] = $result->fetch_assoc()['total'];
-            
+
             // Currently inside (checked in but not checked out)
             $result = $conn->query("
                 SELECT COUNT(*) as total 
@@ -83,7 +82,7 @@ if (isset($_GET['ajax'])) {
                 WHERE status = 'checked_in' AND check_out_time IS NULL
             ");
             $metrics['currentlyInside'] = $result->fetch_assoc()['total'];
-            
+
             // Pending approvals
             $result = $conn->query("
                 SELECT COUNT(*) as total 
@@ -91,7 +90,7 @@ if (isset($_GET['ajax'])) {
                 WHERE status = 'pending'
             ");
             $metrics['pendingApprovals'] = $result->fetch_assoc()['total'];
-            
+
             // Security alerts (using rejected visitors and suspicious patterns)
             $result = $conn->query("
                 SELECT COUNT(*) as total 
@@ -100,16 +99,16 @@ if (isset($_GET['ajax'])) {
                 AND DATE(created_at) = CURDATE()
             ");
             $metrics['securityAlerts'] = $result->fetch_assoc()['total'];
-            
+
             echo json_encode($metrics);
             break;
-            
+
         case 'traffic_trend':
             $data = [];
             for ($i = 6; $i >= 0; $i--) {
                 $date = date('Y-m-d', strtotime("-$i days"));
                 $dayName = date('D', strtotime($date));
-                
+
                 // Total visitors
                 $result = $conn->query("
                     SELECT COUNT(*) as total 
@@ -117,7 +116,7 @@ if (isset($_GET['ajax'])) {
                     WHERE DATE(created_at) = '$date'
                 ");
                 $total = $result->fetch_assoc()['total'];
-                
+
                 // Security alerts (rejected/denied)
                 $result = $conn->query("
                     SELECT COUNT(*) as alerts 
@@ -126,7 +125,7 @@ if (isset($_GET['ajax'])) {
                     AND (status = 'rejected' OR status = 'denied')
                 ");
                 $alerts = $result->fetch_assoc()['alerts'];
-                
+
                 $data[] = [
                     'date' => $date,
                     'day' => $dayName,
@@ -136,7 +135,7 @@ if (isset($_GET['ajax'])) {
             }
             echo json_encode($data);
             break;
-            
+
         case 'visitor_types':
             // Categorize visitors by organization or purpose
             $result = $conn->query("
@@ -155,14 +154,14 @@ if (isset($_GET['ajax'])) {
                 GROUP BY visitor_type
                 ORDER BY count DESC
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
             }
             echo json_encode($data);
             break;
-            
+
         case 'peak_hours':
             $result = $conn->query("
                 SELECT 
@@ -175,7 +174,7 @@ if (isset($_GET['ajax'])) {
                 GROUP BY HOUR(check_in_time)
                 ORDER BY hour
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = [
@@ -186,7 +185,7 @@ if (isset($_GET['ajax'])) {
             }
             echo json_encode($data);
             break;
-            
+
         case 'floor_heatmap':
             $result = $conn->query("
                 SELECT 
@@ -200,7 +199,7 @@ if (isset($_GET['ajax'])) {
                 GROUP BY floor_of_visit, HOUR(check_in_time)
                 ORDER BY floor_of_visit, hour
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = [
@@ -211,7 +210,7 @@ if (isset($_GET['ajax'])) {
             }
             echo json_encode($data);
             break;
-            
+
         case 'status_distribution':
             $result = $conn->query("
                 SELECT 
@@ -222,14 +221,14 @@ if (isset($_GET['ajax'])) {
                 GROUP BY status
                 ORDER BY count DESC
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
             }
             echo json_encode($data);
             break;
-            
+
         case 'visit_duration':
             $result = $conn->query("
                 SELECT 
@@ -257,14 +256,14 @@ if (isset($_GET['ajax'])) {
                         WHEN '6h+' THEN 6
                     END
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
             }
             echo json_encode($data);
             break;
-            
+
         case 'recent_activity':
             $result = $conn->query("
                 SELECT 
@@ -291,7 +290,7 @@ if (isset($_GET['ajax'])) {
                     END DESC
                 LIMIT 10
             ");
-            
+
             $data = [];
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
@@ -299,7 +298,7 @@ if (isset($_GET['ajax'])) {
             echo json_encode($data);
             break;
     }
-    
+
     $conn->close();
     exit();
 }
@@ -309,6 +308,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -495,9 +495,17 @@ $conn->close();
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .visitor-list {
@@ -559,32 +567,33 @@ $conn->close();
             .dashboard-title {
                 font-size: 2rem;
             }
-            
+
             .metric-value {
                 font-size: 2rem;
             }
-            
+
             .chart-container {
                 height: 350px;
             }
-            
+
             .canvas-container {
                 height: 250px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="dashboard-header">
         <div class="container">
-        <div class="row align-items-center">
-        <div class="col-md-8">
-        <h1 class="dashboard-title">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="dashboard-title">
                         <i class="bi bi-graph-up me-3"></i>Analytics
                     </h1>
-                    </div>
-                    </div>
-                    </div>
+                </div>
+            </div>
+        </div>
         <!--<div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
@@ -593,15 +602,15 @@ $conn->close();
                     </h1>
                     <p class="dashboard-subtitle">Real-time insights</p>
                 </div>-->
-                <!--<div class="col-md-4 text-end">
+        <!--<div class="col-md-4 text-end">
                     <div class="security-status" id="securityStatus">
                         <span class="status-indicator status-normal"></span>
                         Security Status: Normal
                     </div>
                     <small class="d-block mt-1" id="lastUpdate">Loading...</small>
                 </div>-->
-            </div>
-        </div>
+    </div>
+    </div>
     </div>
 
     <div class="container-fluid">
@@ -616,8 +625,8 @@ $conn->close();
                 </div>
                 <div class="col-md-6 text-end">
                     <a href="staff_dashboard.php" class="btn btn-outline-primary me-2" style="color: #07AF8B !important; border-color: #07AF8B !important;"
-   onmouseover="this.style.backgroundColor='#07AF8B'; this.style.color='white';"
-   onmouseout="this.style.backgroundColor='transparent'; this.style.color='#07AF8B';">
+                        onmouseover="this.style.backgroundColor='#07AF8B'; this.style.color='white';"
+                        onmouseout="this.style.backgroundColor='transparent'; this.style.color='#07AF8B';">
                         <i class="bi bi-arrow-left"></i>
                         Back to Dashboard
                     </a>
@@ -673,7 +682,7 @@ $conn->close();
                     </div>
                 </div>
             </div>-->
-        </div> 
+        </div>
 
         <!-- Charts Row 1 -->
         <div class="row mb-4">
@@ -761,7 +770,7 @@ $conn->close();
         // Global variables
         let charts = {};
         let currentPeriod = 'today';
-        
+
         // Color scheme
         const colors = {
             primary: '#07AF8B',
@@ -796,7 +805,7 @@ $conn->close();
                 document.getElementById('currentlyInside').textContent = data.currentlyInside;
                 document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
                 document.getElementById('securityAlerts').textContent = data.securityAlerts;
-                
+
                 updateSecurityStatus(data.securityAlerts);
             }
         }
@@ -805,7 +814,7 @@ $conn->close();
         function updateSecurityStatus(alertCount) {
             const statusElement = document.getElementById('securityStatus');
             let statusClass, statusText;
-            
+
             if (alertCount === 0) {
                 statusClass = 'status-normal';
                 statusText = 'Normal';
@@ -816,7 +825,7 @@ $conn->close();
                 statusClass = 'status-critical';
                 statusText = 'Alert';
             }
-            
+
             statusElement.innerHTML = `
                 <span class="status-indicator ${statusClass}"></span>
                 Security Status: ${statusText}
@@ -827,13 +836,13 @@ $conn->close();
         async function updateTrafficTrendChart() {
             const data = await fetchData('traffic_trend');
             if (!data) return;
-            
+
             const ctx = document.getElementById('trafficTrendChart').getContext('2d');
-            
+
             if (charts.trafficTrend) {
                 charts.trafficTrend.destroy();
             }
-            
+
             charts.trafficTrend = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -851,10 +860,14 @@ $conn->close();
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'top' }
+                        legend: {
+                            position: 'top'
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
             });
@@ -864,13 +877,13 @@ $conn->close();
         async function updateVisitorTypesChart() {
             const data = await fetchData('visitor_types');
             if (!data) return;
-            
+
             const ctx = document.getElementById('visitorTypesChart').getContext('2d');
-            
+
             if (charts.visitorTypes) {
                 charts.visitorTypes.destroy();
             }
-            
+
             charts.visitorTypes = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -891,7 +904,9 @@ $conn->close();
                     maintainAspectRatio: false,
                     cutout: '60%',
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
             });
@@ -901,15 +916,17 @@ $conn->close();
         async function updatePeakHoursChart() {
             const data = await fetchData('peak_hours');
             if (!data) return;
-            
+
             const ctx = document.getElementById('peakHoursChart').getContext('2d');
-            
+
             if (charts.peakHours) {
                 charts.peakHours.destroy();
             }
-            
+
             // Create 24-hour array with data
-            const hours = Array.from({length: 24}, (_, i) => i);
+            const hours = Array.from({
+                length: 24
+            }, (_, i) => i);
             const checkins = hours.map(hour => {
                 const found = data.find(d => d.hour === hour);
                 return found ? found.checkins : 0;
@@ -918,7 +935,7 @@ $conn->close();
                 const found = data.find(d => d.hour === hour);
                 return found ? found.checkouts : 0;
             });
-            
+
             charts.peakHours = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -939,58 +956,62 @@ $conn->close();
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true }
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
             });
         }
 
         // Floor Heatmap - Updated with vertical scrolling
-async function updateFloorHeatmap() {
-    const data = await fetchData('floor_heatmap');
-    if (!data) return;
-    
-    const floors = [...new Set(data.map(d => d.floor))].sort();
-    const hours = Array.from({length: 24}, (_, i) => i);
-    
-    // Create scrollable container with fixed height and hidden scrollbars
-    let html = '<div class="heatmap-scroll-container" style="max-height: 350px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 8px; scrollbar-width: none; -ms-overflow-style: none;">';
-    html += '<table class="table table-sm heatmap-table mb-0" style="min-width: max-content;">';
-    html += '<thead class="sticky-top" style="background-color: white; z-index: 10;"><tr><th style="position: sticky; left: 0; background-color: white; z-index: 11; border-right: 2px solid #dee2e6;">Floor</th>';
-    
-    hours.forEach(hour => {
-        html += `<th class="text-center" style="min-width: 40px;">${hour}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-    
-    floors.forEach(floor => {
-        html += `<tr><td style="position: sticky; left: 0; background-color: white; font-weight: bold; border-right: 2px solid #dee2e6; z-index: 5;">${floor}</td>`;
-        
-        hours.forEach(hour => {
-            const found = data.find(d => d.floor === floor && d.hour === hour);
-            const count = found ? found.count : 0;
-            
-            let bgColor = '#f8f9fa';
-            let textColor = '#212529';
-            if (count > 0) {
-                const intensity = Math.min(count / 10, 1);
-                bgColor = `rgba(7, 175, 139, ${0.1 + intensity * 0.7})`;
-                // Use white text for higher intensity cells
-                if (intensity > 0.5) {
-                    textColor = 'white';
-                }
-            }
-            
-            html += `<td class="heatmap-cell text-center" style="background-color: ${bgColor}; color: ${textColor}; min-width: 40px; height: 35px; vertical-align: middle; border: 1px solid #dee2e6; cursor: pointer;" title="Floor: ${floor}, Hour: ${hour}:00, Count: ${count}">${count > 0 ? count : ''}</td>`;
-        });
-        
-        html += '</tr>';
-    });
-    
-    html += '</tbody></table></div>';
-    
-    // Add CSS to hide webkit scrollbars
-    html += `<style>
+        async function updateFloorHeatmap() {
+            const data = await fetchData('floor_heatmap');
+            if (!data) return;
+
+            const floors = [...new Set(data.map(d => d.floor))].sort();
+            const hours = Array.from({
+                length: 24
+            }, (_, i) => i);
+
+            // Create scrollable container with fixed height and hidden scrollbars
+            let html = '<div class="heatmap-scroll-container" style="max-height: 350px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 8px; scrollbar-width: none; -ms-overflow-style: none;">';
+            html += '<table class="table table-sm heatmap-table mb-0" style="min-width: max-content;">';
+            html += '<thead class="sticky-top" style="background-color: white; z-index: 10;"><tr><th style="position: sticky; left: 0; background-color: white; z-index: 11; border-right: 2px solid #dee2e6;">Floor</th>';
+
+            hours.forEach(hour => {
+                html += `<th class="text-center" style="min-width: 40px;">${hour}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            floors.forEach(floor => {
+                html += `<tr><td style="position: sticky; left: 0; background-color: white; font-weight: bold; border-right: 2px solid #dee2e6; z-index: 5;">${floor}</td>`;
+
+                hours.forEach(hour => {
+                    const found = data.find(d => d.floor === floor && d.hour === hour);
+                    const count = found ? found.count : 0;
+
+                    let bgColor = '#f8f9fa';
+                    let textColor = '#212529';
+                    if (count > 0) {
+                        const intensity = Math.min(count / 10, 1);
+                        bgColor = `rgba(7, 175, 139, ${0.1 + intensity * 0.7})`;
+                        // Use white text for higher intensity cells
+                        if (intensity > 0.5) {
+                            textColor = 'white';
+                        }
+                    }
+
+                    html += `<td class="heatmap-cell text-center" style="background-color: ${bgColor}; color: ${textColor}; min-width: 40px; height: 35px; vertical-align: middle; border: 1px solid #dee2e6; cursor: pointer;" title="Floor: ${floor}, Hour: ${hour}:00, Count: ${count}">${count > 0 ? count : ''}</td>`;
+                });
+
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            // Add CSS to hide webkit scrollbars
+            html += `<style>
         .heatmap-scroll-container::-webkit-scrollbar {
             display: none;
         }
@@ -999,32 +1020,32 @@ async function updateFloorHeatmap() {
             -ms-overflow-style: none; /* Internet Explorer and Edge */
         }
     </style>`;
-    
-    // Add a small legend below the heatmap
-    html += '<div class="mt-2 d-flex align-items-center justify-content-center flex-wrap gap-2">';
-    html += '<small class="text-muted me-2">Intensity:</small>';
-    for (let i = 0; i <= 4; i++) {
-        const intensity = i / 4;
-        const bgColor = i === 0 ? '#f8f9fa' : `rgba(7, 175, 139, ${0.1 + intensity * 0.7})`;
-        const textColor = intensity > 0.5 ? 'white' : '#212529';
-        html += `<span class="badge" style="background-color: ${bgColor}; color: ${textColor}; border: 1px solid #dee2e6;">${i === 0 ? '0' : `${i * 2}+`}</span>`;
-    }
-    html += '</div>';
-    
-    document.getElementById('floorHeatmap').innerHTML = html;
-}
+
+            // Add a small legend below the heatmap
+            html += '<div class="mt-2 d-flex align-items-center justify-content-center flex-wrap gap-2">';
+            html += '<small class="text-muted me-2">Intensity:</small>';
+            for (let i = 0; i <= 4; i++) {
+                const intensity = i / 4;
+                const bgColor = i === 0 ? '#f8f9fa' : `rgba(7, 175, 139, ${0.1 + intensity * 0.7})`;
+                const textColor = intensity > 0.5 ? 'white' : '#212529';
+                html += `<span class="badge" style="background-color: ${bgColor}; color: ${textColor}; border: 1px solid #dee2e6;">${i === 0 ? '0' : `${i * 2}+`}</span>`;
+            }
+            html += '</div>';
+
+            document.getElementById('floorHeatmap').innerHTML = html;
+        }
 
         // Status Distribution Chart
         async function updateStatusDistributionChart() {
             const data = await fetchData('status_distribution');
             if (!data) return;
-            
+
             const ctx = document.getElementById('statusDistributionChart').getContext('2d');
-            
+
             if (charts.statusDistribution) {
                 charts.statusDistribution.destroy();
             }
-            
+
             const statusColors = {
                 'approved': colors.success,
                 'pending': colors.warning,
@@ -1033,7 +1054,7 @@ async function updateFloorHeatmap() {
                 'rejected': colors.danger,
                 'denied': colors.danger
             };
-            
+
             charts.statusDistribution = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1048,10 +1069,14 @@ async function updateFloorHeatmap() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
             });
@@ -1061,20 +1086,20 @@ async function updateFloorHeatmap() {
         async function updateVisitDurationChart() {
             const data = await fetchData('visit_duration');
             if (!data) return;
-            
+
             const ctx = document.getElementById('visitDurationChart').getContext('2d');
-            
+
             if (charts.visitDuration) {
                 charts.visitDuration.destroy();
             }
-            
+
             // Ensure proper order
             const orderedDurations = ['< 30min', '30min-1h', '1h-2h', '2h-4h', '4h-6h', '6h+'];
             const orderedData = orderedDurations.map(duration => {
                 const found = data.find(d => d.duration_range === duration);
                 return found ? found.count : 0;
             });
-            
+
             charts.visitDuration = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1092,10 +1117,14 @@ async function updateFloorHeatmap() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
             });
@@ -1105,21 +1134,21 @@ async function updateFloorHeatmap() {
         async function updateRecentActivity() {
             const data = await fetchData('recent_activity');
             if (!data) return;
-            
+
             let html = '';
             data.forEach(visitor => {
                 const flaggedClass = visitor.flagged == 1 ? 'flagged' : '';
                 let statusBadge = '';
                 let timeInfo = '';
-                
-                switch(visitor.status) {
+
+                switch (visitor.status) {
                     case 'checked_in':
                         statusBadge = '<span class="badge bg-success ms-2">Checked In</span>';
                         timeInfo = `<div class="small text-muted">Floor: ${visitor.floor_of_visit || 'Unknown'} - Host: ${visitor.host_name || 'Unknown'}</div>`;
                         break;
                     case 'checked_out':
                         statusBadge = '<span class="badge bg-primary ms-2">Checked Out</span>';
-                        timeInfo = visitor.duration_minutes ? 
+                        timeInfo = visitor.duration_minutes ?
                             `<div class="small text-muted">Duration: ${Math.floor(visitor.duration_minutes / 60)}h ${visitor.duration_minutes % 60}m</div>` :
                             '<div class="small text-muted">Duration: Unknown</div>';
                         break;
@@ -1137,9 +1166,9 @@ async function updateFloorHeatmap() {
                         timeInfo = '<div class="small text-muted">Security alert triggered</div>';
                         break;
                 }
-                
+
                 const timeAgo = getTimeAgo(visitor.check_out_time || visitor.check_in_time || visitor.created_at);
-                
+
                 html += `
                     <div class="visitor-item ${flaggedClass}">
                         <div class="d-flex justify-content-between align-items-center">
@@ -1153,25 +1182,25 @@ async function updateFloorHeatmap() {
                     </div>
                 `;
             });
-            
+
             document.getElementById('recentActivity').innerHTML = html || '<p class="text-muted">No recent activity</p>';
         }
 
         // Helper function to calculate time ago
         function getTimeAgo(timestamp) {
             if (!timestamp) return 'Unknown';
-            
+
             const now = new Date();
             const time = new Date(timestamp);
             const diffMs = now - time;
             const diffMins = Math.floor(diffMs / 60000);
-            
+
             if (diffMins < 1) return 'Just now';
             if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-            
+
             const diffHours = Math.floor(diffMins / 60);
             if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-            
+
             const diffDays = Math.floor(diffHours / 24);
             return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
         }
@@ -1179,9 +1208,9 @@ async function updateFloorHeatmap() {
         // Update last refresh time
         function updateLastRefreshTime() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { 
-                hour12: false, 
-                hour: '2-digit', 
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
             });
@@ -1193,7 +1222,7 @@ async function updateFloorHeatmap() {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                
+
                 currentPeriod = this.dataset.period;
                 refreshDashboard();
             });
@@ -1203,12 +1232,12 @@ async function updateFloorHeatmap() {
         async function refreshDashboard() {
             const refreshBtn = document.querySelector('.refresh-btn');
             const originalHTML = refreshBtn.innerHTML;
-            
+
             refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise fa-spin"></i> Refreshing...';
             refreshBtn.disabled = true;
-            
+
             document.getElementById('metricsContainer').classList.add('loading');
-            
+
             try {
                 await Promise.all([
                     updateMetrics(),
@@ -1220,7 +1249,7 @@ async function updateFloorHeatmap() {
                     updateVisitDurationChart(),
                     updateRecentActivity()
                 ]);
-                
+
                 updateLastRefreshTime();
             } catch (error) {
                 console.error('Error refreshing dashboard:', error);
@@ -1241,7 +1270,7 @@ async function updateFloorHeatmap() {
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
+                switch (e.key) {
                     case 'r':
                         e.preventDefault();
                         refreshDashboard();
@@ -1292,8 +1321,10 @@ async function updateFloorHeatmap() {
                     securityAlerts: document.getElementById('securityAlerts').textContent
                 }
             };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: 'application/json'
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -1303,4 +1334,5 @@ async function updateFloorHeatmap() {
         }
     </script>
 </body>
+
 </html>
