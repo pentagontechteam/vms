@@ -32,6 +32,7 @@ if (isset($_SESSION['employee_id'])) {
     $stmt->close();
 }
 
+
 // Process CSV import
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['visitor_csv'])) {
     $file = $_FILES['visitor_csv']['tmp_name'];
@@ -84,6 +85,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['visitor_csv'])) {
                 $stmt = $conn->prepare("INSERT INTO visitors (name, phone, email, employee_id, host_id, host_name, organization, visit_date, time_of_visit, floor_of_visit, reason, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
                 $stmt->bind_param("sssiissssss", $name, $phone, $email, $employee_id, $employee_id, $employee_name, $organization, $visit_date, $time_of_visit, $floor_of_visit, $reason);
                 
+        
+                
                 if ($stmt->execute()) {
                     $imported_count++;
                     
@@ -98,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['visitor_csv'])) {
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                         $mail->Port = 465;
 
-                        $mail->setFrom('support@aatcabuja.com.ng', 'VMS System');
+                        $mail->setFrom('support@aatcabuja.com.ng', 'Abuja-AATC');
                         $mail->addAddress($email);
                         $mail->isHTML(true);
                         $mail->Subject = 'Visitor Registration Confirmation';
@@ -164,20 +167,122 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
                 $mail->Password = 'Dw2bbgvhZmsp7QA';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
-
-                $mail->setFrom('support@aatcabuja.com.ng', 'VMS System');
+                
+                $mail->setFrom('support@aatcabuja.com.ng', 'Abuja-AATC');
                 $mail->addAddress($email);
                 //$mail->addAddress('reception@yourcompany.com', 'Reception');
                 $mail->isHTML(true);
                 $mail->Subject = 'Visitor Registration Confirmation';
                 $mail->Body = "
-                    <h3>Visitor Registration Details</h3>
-                    <p><strong>Name:</strong> $name</p>
-                    <p><strong>Host:</strong> $host_name</p>
-                    <p><strong>Visit Date:</strong> $visit_date at $time_of_visit</p>
-                    <p><strong>Floor:</strong> $floor_of_visit</p>
-                    <p><strong>Purpose:</strong> $reason</p>
-                    <p>Your visit request is <strong>pending approval</strong>. You'll receive another email once approved.</p>
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                    <style>
+                         body { 
+                            font-family: Arial, sans-serif; 
+                            line-height: 1.6; 
+                            color: #333; 
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f5f5f5;
+                        }
+                        .container { 
+                            max-width: 600px; 
+                            margin: 20px auto; 
+                            background: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        }
+                        .header { 
+                            background-color: #07AF8B; 
+                            color: white; 
+                            padding: 20px; 
+                            text-align: center;
+                        }
+                        .header h2 {
+                            margin: 10px 0;
+                            font-size: 24px;
+                        }
+                        .header-logo {
+                            width: auto;
+                            height: auto;
+                            max-width: 100%;
+                            display: block;
+                            margin: 0 auto;
+                        }
+                        .content { 
+                            padding: 25px;
+                        }
+                        .footer { 
+                            background-color: #007570;
+                            color: white;
+                            padding: 15px 20px; 
+                            text-align: center; 
+                            font-size: 12px; 
+                        }
+                        .qr-code { 
+                            text-align: center; 
+                            margin: 25px 0;
+                            padding: 15px;
+                            background-color: #f9f9f9;
+                            border-radius: 5px;
+                            border-left: 4px solid #FFCA00;
+                        }
+                        .details-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                        }
+                        .details-table td {
+                            padding: 10px;
+                            border-bottom: 1px solid #eee;
+                        }
+                        .details-table td:first-child {
+                            font-weight: bold;
+                            color: #007570;
+                            width: 30%;
+                        }
+                        .highlight {
+                            background-color: rgba(255, 202, 0, 0.1);
+                            padding: 10px;
+                            border-radius: 5px;
+                            margin: 15px 0;
+                            border-left: 3px solid #FFCA00;
+                        }
+                        .button {
+                            display: inline-block;
+                            background-color: #FFCA00;
+                            color: #333;
+                            padding: 10px 20px;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            font-weight: bold;
+                            margin: 15px 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                <div class='container'>
+                <div class='header'>
+                            <h2>Abuja-AATC Visitor Registration Details</h2>
+                        </div>
+                        <div class='content'>
+                <table class='details-table'>
+                    <tr><td><p><strong>Name:</strong> $name</p></td></tr>
+                    <tr><td><p><strong>Host:</strong> $host_name</p></td></tr>
+                    <tr><td><p><strong>Visit Date:</strong> $visit_date at $time_of_visit</p></td></tr>
+                    <tr><td><p><strong>Floor:</strong> $floor_of_visit</p></td></tr>
+                    <tr><td><p><strong>Purpose:</strong> $reason</p></td></tr>
+                    <tr><td><p>Your visit request is <strong>pending confirmation</strong>. You'll receive another email once confirmed.</p></td></tr>
+                    </table>
+                    </div>
+                    <div class='footer'>
+                            <p>This is an automated message. Please do not reply.</p>
+                        </div>
+                    </div>
+                    </body>
+                </html>
                 ";
 
                 $mail->send();
@@ -204,6 +309,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
     <title>Visitor Registration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
     <style>
         :root {
             --primary: #07AF8B;
@@ -364,7 +470,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
                     </div>
                     <div class="col-md-6 mt-3">
                         <label class="form-label">Phone</label>
-                        <input type="tel" name="guests[0][phone]" class="form-control" placeholder="+2341234567890" required>
+                        <input type="tel" name="guests[0][phone]" class="form-control" placeholder="+234XXXXXXXXXX" required>
                     </div>
                     <div class="col-md-6 mt-3">
                         <label class="form-label">Email</label>
@@ -389,18 +495,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
                             <option value="Ground Floor">Ground Floor</option>
                             <option value="Mezzanine">Mezzanine</option>
                             <option value="Floor 1">Floor 1</option>
-                            <option value="Floor 2">Floor 2</option>
-                            <option value="Floor 3">Floor 3</option>
-                            <option value="Floor 4">Floor 4</option>
-                            <option value="Floor 5">Floor 5</option>
-                            <option value="Floor 6">Floor 6</option>
-                            <option value="Floor 7">Floor 7</option>
-                            <option value="Floor 8">Floor 8</option>
-                            <option value="Floor 9">Floor 9</option>
+                            <option value="Floor 2 - Right Wing">Floor 2 - Right Wing</option>
+                            <option value="Floor 2 - Left Wing">Floor 2 - Left Wing</option>
+                            <option value="Floor 3 - Right Wing">Floor 3 - Right Wing</option>
+                            <option value="Floor 3 - Left Wing">Floor 3 - Left Wing</option>
+                            <option value="Floor 4 - Right Wing">Floor 4 - Right Wing</option>
+                            <option value="Floor 4 - Left Wing">Floor 4 - Left Wing</option>
+                            <option value="Floor 5 - Right Wing">Floor 5 - Right Wing</option>
+                            <option value="Floor 5 - Left Wing">Floor 5 - Left Wing</option>
+                            <option value="Floor 6 - Right Wing">Floor 6 - Right Wing</option>
+                            <option value="Floor 6 - Left Wing">Floor 6 - Left Wing</option>
+                            <option value="Floor 7 - Right Wing">Floor 7 - Right Wing</option>
+                            <option value="Floor 7 - Left Wing">Floor 7 - Left Wing</option>
+                            <option value="Floor 8 - Right Wing">Floor 8 - Right Wing</option>
+                            <option value="Floor 8 - Left Wing">Floor 8 - Left Wing</option>
+                            <option value="Floor 9 - Right Wing">Floor 9 - Right Wing</option>
+                            <option value="Floor 9 - Left Wing">Floor 9 - Left Wing</option>
                         </select>
                     </div>
                     <div class="col-12 mt-3">
-                        <label class="form-label">Reason for Visit</label>
+                        <label class="form-label">Purpose</label>
                         <textarea name="guests[0][reason]" class="form-control" rows="2" required></textarea>
                     </div>
                 </div>
@@ -454,7 +568,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
                         <pre class="import-sample">name,phone,email,organization,visit_date,time_of_visit,floor,reason
 John Doe,+2341234567890,john@example.com,ABC Corp,2025-05-20,14:30,Floor 3,Business Meeting
 Jane Smith,+2349876543210,jane@example.com,XYZ Ltd,2025-05-21,10:00,Floor 5,Interview</pre>
-                        <a href="sample_visitors.csv" class="btn btn-sm btn-outline-dark mt-2" download><i class="bi bi-download"></i> Download Sample</a>
+                        <a href="#" class="btn btn-sm btn-outline-dark mt-2" download="sample_visitors.csv"><i class="bi bi-download"></i> Download Sample</a>
                     </div>
                 </form>
             </div>
@@ -522,18 +636,26 @@ Jane Smith,+2349876543210,jane@example.com,XYZ Ltd,2025-05-21,10:00,Floor 5,Inte
                         <option value="Ground Floor">Ground Floor</option>
                         <option value="Mezzanine">Mezzanine</option>
                         <option value="Floor 1">Floor 1</option>
-                        <option value="Floor 2">Floor 2</option>
-                        <option value="Floor 3">Floor 3</option>
-                        <option value="Floor 4">Floor 4</option>
-                        <option value="Floor 5">Floor 5</option>
-                        <option value="Floor 6">Floor 6</option>
-                        <option value="Floor 7">Floor 7</option>
-                        <option value="Floor 8">Floor 8</option>
-                        <option value="Floor 9">Floor 9</option>
+                        <option value="Floor 2">Floor 2 - Right Wing</option>
+                <option value="Floor 2">Floor 2 - Left Wing</option>
+                <option value="Floor 3">Floor 3 - Right Wing</option>
+                <option value="Floor 3">Floor 3 - Left Wing</option>
+                <option value="Floor 4">Floor 4 - Right Wing</option>
+                <option value="Floor 4">Floor 4 - Left Wing</option>
+                <option value="Floor 5">Floor 5 - Right Wing</option>
+                <option value="Floor 5">Floor 5 - Left Wing</option>
+                <option value="Floor 6">Floor 6 - Right Wing</option>
+                <option value="Floor 6">Floor 6 - Left Wing</option>
+                <option value="Floor 7">Floor 7 - Right Wing</option>
+                <option value="Floor 7">Floor 7 - Left Wing</option>
+                <option value="Floor 8">Floor 8 - Right Wing</option>
+                <option value="Floor 8">Floor 8 - Left Wing</option>
+                <option value="Floor 9">Floor 9 - Right Wing</option>
+                <option value="Floor 9">Floor 9 - Left Wing</option>
                     </select>
                 </div>
                 <div class="col-12 mt-3">
-                    <label class="form-label">Reason for Visit</label>
+                    <label class="form-label">Purpose</label>
                     <textarea name="guests[${index}][reason]" class="form-control" rows="2" required></textarea>
                 </div>
             </div>
@@ -580,22 +702,50 @@ Jane Smith,+2349876543210,jane@example.com,XYZ Ltd,2025-05-21,10:00,Floor 5,Inte
             input.setAttribute('min', today);
         });
         
-        // Create and populate sample CSV file for download
-        createSampleCSV();
+        // Setup the sample CSV download
+        setupSampleCSVDownload();
     });
     
-    function createSampleCSV() {
-        // Function to create a sample CSV file and make it available for download
+    function setupSampleCSVDownload() {
+        const downloadLink = document.querySelector('a[download]');
+        if (downloadLink) {
+            // Remove the href attribute to prevent default behavior
+            downloadLink.removeAttribute('href');
+            
+            // Add click event listener
+            downloadLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                downloadSampleCSV();
+            });
+        }
+    }
+    
+    function downloadSampleCSV() {
+        // Create sample CSV content
         const csvContent = `name,phone,email,organization,visit_date,time_of_visit,floor,reason
 John Doe,+2341234567890,john@example.com,ABC Corp,${getTomorrowDate()},14:30,Floor 3,Business Meeting
-Jane Smith,+2349876543210,jane@example.com,XYZ Ltd,${getDayAfterTomorrowDate()},10:00,Floor 5,Interview`;
+Jane Smith,+2349876543210,jane@example.com,XYZ Ltd,${getDayAfterTomorrowDate()},10:00,Floor 5,Interview
+Peter Johnson,+2348033445566,peter@company.com,Tech Solutions,${getTomorrowDate()},09:00,Floor 2,Technical Discussion
+Sarah Williams,+2347011223344,sarah@business.com,Finance Inc,${getDayAfterTomorrowDate()},15:45,Floor 7,Contract Negotiation`;
         
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        // Create a Blob from the CSV content
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create a temporary download link
+        const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        const downloadLink = document.querySelector('a[download="sample_visitors.csv"]');
-        if (downloadLink) {
-            downloadLink.href = url;
-        }
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'sample_visitors.csv');
+        link.style.visibility = 'hidden';
+        
+        // Add to DOM, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        URL.revokeObjectURL(url);
     }
     
     function getTomorrowDate() {

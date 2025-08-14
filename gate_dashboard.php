@@ -3,10 +3,10 @@
 session_start();
 
 // Check if user is authorized (add your authentication logic here)
-if (!isset($_SESSION['gate_operative'])) {
-    header("Location: gate_login.php");
-    exit();
-}
+//if (!isset($_SESSION['gate_operative'])) {
+//    header("Location: gate_login.php");
+//    exit();
+//}
 
 // Database connection
 $conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
@@ -22,6 +22,7 @@ if ($conn->connect_error) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gate Scanner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
     <style>
         .scanner-container {
             max-width: 600px;

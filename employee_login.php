@@ -65,6 +65,7 @@ $conn->close();
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
     <style>
         body {

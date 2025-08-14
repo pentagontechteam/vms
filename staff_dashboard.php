@@ -21,6 +21,8 @@ if (!isset($_SESSION['employee_id'])) {
   exit();
 }
 
+$_SESSION['employee_role'] = $role;
+
 
 // Get employee name (either from session or database)
 if (isset($_SESSION['name'])) {
@@ -51,6 +53,22 @@ if ($profile_completed == 0) {
   exit();
 }
 
+
+// ADDED: Check if user role exists in session, if not fetch from database
+if (!isset($_SESSION['employee_role'])) {
+    $rec_id = $_SESSION['employee_id'];
+    $stmt = $conn->prepare("SELECT role FROM employees WHERE id = ?");
+    $stmt->bind_param("i", $rec_id);
+    $stmt->execute();
+    $stmt->bind_result($role);
+    $stmt->fetch();
+    $_SESSION['employee_role'] = $role;
+    $stmt->close();
+}
+
+// Get user role for conditional features
+$user_role = $_SESSION['employee_role'] ?? 'staff';
+$is_super_user = ($user_role === 'super_user');
 
 
 $employee_id = $_SESSION['employee_id'] ?? 0;
@@ -92,7 +110,7 @@ $stmt->bind_param("isssss", $employee_id, $name, $email, $organization, $visit_d
             $mail->Password = 'Dw2bbgvhZmsp7QA';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
-         $mail->setFrom('support@aatcabuja.com.ng', 'VMS System');
+         $mail->setFrom('support@aatcabuja.com.ng', 'Abuja-AATC');
          $mail->addAddress($visitor_email);
          $mail->Subject = 'Visitor Request Received';
          $mail->Body = 'Your visit request has been received.';
@@ -160,9 +178,10 @@ $requests = $conn->query("SELECT name as visitor, email,
     reason as purpose, 
     status,
     unique_code,
-    created_at
+    created_at,
+    requested_by_receptionist
     FROM visitors 
-    WHERE employee_id = $employee_id $where
+    WHERE (employee_id = $employee_id) $where
     ORDER BY created_at DESC");
 
 
@@ -175,6 +194,7 @@ $requests = $conn->query("SELECT name as visitor, email,
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - AFREXIMBANK</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <style>
     :root {
       --primary: #07AF8B;
@@ -552,7 +572,6 @@ $requests = $conn->query("SELECT name as visitor, email,
 .status-checked_out {
   color: #6c757d;
 }
-
   </style>
 </head>
 <body>
@@ -561,6 +580,9 @@ $requests = $conn->query("SELECT name as visitor, email,
   <img src="assets/logo-green-yellow.png" alt="Logo" />
   <div class="user-section">
     <a href="register_visitor_form.php">New request</a>
+    <?php if ($is_super_user): ?>
+        <a href="analytics.php" class="analytics-btn">Analytics</a>
+    <?php endif; ?>
     <a href="update_profile_logged_in.php"><span class="material-icons user-icon">account_circle</span></a>
     <div class="user-info">
       <strong><?= htmlspecialchars($name) ?></strong><br>
@@ -658,7 +680,12 @@ $requests = $conn->query("SELECT name as visitor, email,
                 </small>
             </td>
             <td><?= htmlspecialchars($req['request_date']) ?></td>
-            <td><?= htmlspecialchars($req['purpose']) ?></td>
+            <td>
+  <?= htmlspecialchars($req['purpose']) ?>
+  <?php if (!empty($req['requested_by_receptionist'])): ?>
+    <span class="badge" style="background: #ffca00; color: black; margin-left: 5px;">By Reception</span>
+  <?php endif; ?>
+</td>
             <td class="status-<?= strtolower($req['status']) ?>">
                 <?= str_replace('_', ' ', ucwords(strtolower($req['status']), '_')) ?>
             </td>
@@ -769,10 +796,13 @@ function updateRequestsTable(requests) {
                 <td>${req.purpose}</td>
                 <td class="status-${req.status ? req.status.toLowerCase() : 'pending'}">
     ${req.status ? 
-        req.status.toLowerCase() === 'checked_in' ? 'Checked In' : 
-        req.status.charAt(0).toUpperCase() + req.status.slice(1).toLowerCase() 
+        (req.status.toLowerCase() === 'checked_in' ? 'Checked In' :
+         req.status.toLowerCase() === 'checked_out' ? 'Checked Out' :
+         req.status.charAt(0).toUpperCase() + req.status.slice(1).toLowerCase()) 
      : 'Pending'}
 </td>
+
+
             `;
             requestsTable.appendChild(row);
         });
@@ -853,10 +883,6 @@ const formatTime = (time, type) => {
     <div class="modal-row">
       <div class="modal-label">Visitor Name:</div>
       <div class="modal-value">${visitor.name || 'N/A'}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">Host Name:</div>
-      <div class="modal-value">${visitor.host_name || 'N/A'}</div>
     </div>
     <div class="modal-row">
       <div class="modal-label">Phone:</div>

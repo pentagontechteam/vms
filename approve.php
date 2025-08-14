@@ -35,21 +35,23 @@ if (isset($_GET['id'])) {
     QRcode::png($qr_code, $qr_code_path);
 
     // Update visitor status and assign QR code
-    $stmt = $conn->prepare("UPDATE visitors SET status='approved', qr_code=? WHERE id=?");
+    $stmt = $conn->prepare(
+    "UPDATE visitors
+     SET status = 'approved',   
+         approved = 1,         
+         qr_code = ?
+     WHERE id = ?"
+);
     $stmt->bind_param("si", $qr_code, $id);
     $stmt->execute();
-    //var_dump($id);
-    
 
     // Retrieve visitor details
-    $stmt = $conn->prepare("SELECT visitors.name, visitors.email, visitors.visit_date, visitors.time_of_visit, visitors.floor_of_visit, visitors.reason, visitors.unique_code, employees.name AS host_name, employees.email AS host_email FROM visitors LEFT JOIN employees ON visitors.host_id = employees.id WHERE visitors.id=?");
-
+    $stmt = $conn->prepare("SELECT visitors.name, visitors.email, visitors.visit_date, visitors.time_of_visit, visitors.floor_of_visit, visitors.reason, visitors.unique_code, employees.name AS host_name, employees.email AS host_email FROM visitors LEFT JOIN employees ON visitors.employee_id = employees.id WHERE visitors.id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
 
-        if ($result->num_rows > 0) {
+    if ($result->num_rows > 0) {
         $visitor = $result->fetch_assoc();
         $visitor_name = $visitor['name'];
         $visitor_email = $visitor['email'];
@@ -59,7 +61,6 @@ if (isset($_GET['id'])) {
         $visit_location = $visitor['floor_of_visit'];
         $visit_purpose = $visitor['reason'];
         $unique_code = $visitor['unique_code'];
-
 
         // Send email with PHPMailer
         $mail = new PHPMailer(true);
@@ -75,9 +76,9 @@ if (isset($_GET['id'])) {
             $mail->Port = 465;
 
             // Email Setup
-            $mail->setFrom('support@aatcabuja.com.ng', 'VMS System');
+            $mail->setFrom('support@aatcabuja.com.ng', 'Abuja-AATC');
             $mail->addAddress($visitor_email);
-            $mail->Subject = "Appointment Approved - Visitor Management System";
+            $mail->Subject = "Appointment Confirmed";
             
             // HTML Email Content
             $mail->isHTML(true);
@@ -87,134 +88,140 @@ if (isset($_GET['id'])) {
                 <head>
                     <style>
                          body { 
-            font-family: Arial, sans-serif; 
-            line-height: 1.6; 
-            color: #333; 
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 20px auto; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .header { 
-            background-color: #07AF8B; 
-            color: white; 
-            padding: 30px 20px; 
-            text-align: center;
-        }
-        .header h2 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .content { 
-            padding: 25px;
-        }
-        .footer { 
-            background-color: #007570;
-            color: white;
-            padding: 15px 20px; 
-            text-align: center; 
-            font-size: 12px; 
-        }
-        .qr-code { 
-            text-align: center; 
-            margin: 25px 0;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            border-left: 4px solid #FFCA00;
-        }
-        .details-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        .details-table td {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .details-table td:first-child {
-            font-weight: bold;
-            color: #007570;
-            width: 30%;
-        }
-        .highlight {
-            background-color: rgba(255, 202, 0, 0.1);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 3px solid #FFCA00;
-        }
-        .button {
-            display: inline-block;
-            background-color: #FFCA00;
-            color: #333;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 15px 0;
-        }
+                            font-family: Arial, sans-serif; 
+                            line-height: 1.6; 
+                            color: #333; 
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f5f5f5;
+                        }
+                        .container { 
+                            max-width: 600px; 
+                            margin: 20px auto; 
+                            background: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        }
+                        .header { 
+                            background-color: #07AF8B; 
+                            color: white; 
+                            padding: 20px; 
+                            text-align: center;
+                        }
+                        .header h2 {
+                            margin: 10px 0;
+                            font-size: 24px;
+                        }
+                        .header-logo {
+                            width: 100%;
+                            max-height: 100px;
+                            height: auto;
+                            display: block;
+                            margin: 0 auto;
+                        }
+                        .content { 
+                            padding: 25px;
+                        }
+                        .footer { 
+                            background-color: #007570;
+                            color: white;
+                            padding: 15px 20px; 
+                            text-align: center; 
+                            font-size: 12px; 
+                        }
+                        .qr-code { 
+                            text-align: center; 
+                            margin: 25px 0;
+                            padding: 15px;
+                            background-color: #f9f9f9;
+                            border-radius: 5px;
+                            border-left: 4px solid #FFCA00;
+                        }
+                        .details-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                        }
+                        .details-table td {
+                            padding: 10px;
+                            border-bottom: 1px solid #eee;
+                        }
+                        .details-table td:first-child {
+                            font-weight: bold;
+                            color: #007570;
+                            width: 30%;
+                        }
+                        .highlight {
+                            background-color: rgba(255, 202, 0, 0.1);
+                            padding: 10px;
+                            border-radius: 5px;
+                            margin: 15px 0;
+                            border-left: 3px solid #FFCA00;
+                        }
+                        .button {
+                            display: inline-block;
+                            background-color: #FFCA00;
+                            color: #333;
+                            padding: 10px 20px;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            font-weight: bold;
+                            margin: 15px 0;
+                        }
                     </style>
                 </head>
                 <body>
-    <div class='container'>
-        <div class='header'>
-            <h2>Appointment Approved</h2>
-        </div>
-        <div class='content'>
-            <p>Dear $visitor_name,</p>
-            <p>Your appointment request has been <strong>approved</strong>. Below are your appointment details:</p>
-            <table class='details-table'>
-                <tr>
-                    <td><strong>Host:</strong></td>
-                    <td>$host_name</td>
-                </tr>
-                <tr>
-                    <td><strong>Date:</strong></td>
-                    <td>$visit_date</td>
-                </tr>
-                <tr>
-                    <td><strong>Time:</strong></td>
-                    <td>$visit_time</td>
-                </tr>
-                <tr>
-                    <td><strong>Location:</strong></td>
-                    <td>$visit_location</td>
-                </tr>
-                <tr>
-                    <td><strong>Purpose:</strong></td>
-                    <td>$visit_purpose</td>
-                </tr>
-                <tr>
-                    <td><strong>Unique Code:</strong></td>
-                    <td><strong>$unique_code</strong></td>
-                </tr>
-            </table>
-            <div class='qr-code'>
-                <p><strong>Show this QR code at the reception on arrival:</strong></p>
-                <img src='cid:qr_code' alt='QR Code' style='width: 200px; height: 200px;'>
-            </div>
-            <p>Please arrive on time. If you are unable to attend, kindly notify your host in advance.</p>
-        </div>
-        <div class='footer'>
-            <p>This is an automated message. Please do not reply.</p>
-        </div>
-    </div>
-</body>
-</html>
+                    <div class='container'>
+                        <div class='header'>
+                            <img src='cid:logo_image' alt='Logo' class='header-logo'>
+                            <h2>Appointment Confirmed</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Dear $visitor_name,</p>
+                            <p>Your appointment request has been <strong>confirmed</strong>. Below are your appointment details:</p>
+                            <table class='details-table'>
+                                <tr>
+                                    <td><strong>Host:</strong></td>
+                                    <td>$host_name</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date:</strong></td>
+                                    <td>$visit_date</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Time:</strong></td>
+                                    <td>$visit_time</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Purpose:</strong></td>
+                                    <td>$visit_purpose</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unique Code:</strong></td>
+                                    <td><strong>$unique_code</strong></td>
+                                </tr>
+                            </table>
+                            <div class='qr-code'>
+                                <p><strong>Show this QR code at the gate on arrival:</strong></p>
+                                <img src='cid:qr_code' alt='QR Code' style='width: 200px; height: 200px;'>
+                            </div>
+                            <p>Please arrive on time. If you are unable to attend, kindly notify your host in advance.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>This is an automated message. Please do not reply.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
             ";
             
             // Add embedded QR code image
             $mail->addEmbeddedImage($qr_code_path, 'qr_code');
+            // Add embedded logo image
+            $mail->addEmbeddedImage('assets/qr_code_gfx.jpg', 'logo_image');
             
-            // Attach the QR code image as well
+            // Attach the QR code image
             $mail->addAttachment($qr_code_path, 'Your_QR_Code.png');
 
             // Send Email
@@ -224,43 +231,42 @@ if (isset($_GET['id'])) {
                 $host_email = $visitor['host_email'];
     
                 $host_mail = new PHPMailer(true);
-            try {
-                // SMTP Configuration
-                $host_mail->isSMTP();
-                $host_mail->Host = 'smtp.gmail.com';
-                $host_mail->SMTPAuth = true;
-                $host_mail->Username = 'ugorjigideon2@gmail.com';
-                $host_mail->Password = 'vveehxmeldoknxtg';
-                $host_mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-                $host_mail->Port = 465;
+                try {
+                    // SMTP Configuration
+                    $host_mail->isSMTP();
+                    $host_mail->Host = 'smtp.gmail.com';
+                    $host_mail->SMTPAuth = true;
+                    $host_mail->Username = 'ugorjigideon2@gmail.com';
+                    $host_mail->Password = 'vveehxmeldoknxtg';
+                    $host_mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                    $host_mail->Port = 465;
 
-                // Email Setup
-                $host_mail->setFrom('ugorjigideon2@gmail.com', 'VMS System');
-                $host_mail->addAddress($host_email);
-                $host_mail->Subject = "Your Visitor's Appointment Has Been Approved";
-                $host_mail->isHTML(true);
-                $host_mail->Body = "
-                    <html>
-                    <body>
-                        <p>Dear Host,</p>
-                        <p>Your visitor, <strong>$visitor_name , $unique_code</strong>, has been approved.</p>
-                        <p>They will be arriving with the following QR code:</p>
-                        <img src='cid:qr_code' alt='QR Code' style='width: 200px; height: 200px;'>
-                        
-                        <p>Please be prepared for their visit.</p>
-                    </body>
-                    </html>
-        ";
+                    // Email Setup
+                    $host_mail->setFrom('ugorjigideon2@gmail.com', 'VMS System');
+                    $host_mail->addAddress($host_email);
+                    $host_mail->Subject = "Your Visitor's Appointment Has Been Approved";
+                    $host_mail->isHTML(true);
+                    $host_mail->Body = "
+                        <html>
+                        <body>
+                            <p>Dear Host,</p>
+                            <p>Your visitor, <strong>$visitor_name , $unique_code</strong>, has been approved.</p>
+                            <p>They will be arriving with the following QR code:</p>
+                            <img src='cid:qr_code' alt='QR Code' style='width: 200px; height: 200px;'>
+                            <p>Please be prepared for their visit.</p>
+                        </body>
+                        </html>
+                    ";
 
-                // Attach the same QR code
-                $host_mail->addEmbeddedImage($qr_code_path, 'qr_code');
+                    // Attach the same QR code
+                    $host_mail->addEmbeddedImage($qr_code_path, 'qr_code');
 
-                // Send the email
-                $host_mail->send();
-        } catch (Exception $e) {
-        error_log("Host email sending failed: " . $host_mail->ErrorInfo);
-    }
-}
+                    // Send the email
+                    $host_mail->send();
+                } catch (Exception $e) {
+                    error_log("Host email sending failed: " . $host_mail->ErrorInfo);
+                }
+            }
 
             // Display success message with Bootstrap styling
             echo '
@@ -299,7 +305,7 @@ if (isset($_GET['id'])) {
                             <h2 class="card-title mb-3">Approval Successful</h2>
                             <p class="card-text mb-4">Visitor has been approved and the QR code has been sent to their email address.</p>
                             <div class="d-flex justify-content-center">
-                                <a href="cso_dashboard.php" class="btn btn-primary">
+                                <a href="cso_dashboard.php" class="btn" style="background-color: #FFCA00; color: #000; font-weight: bold;">
                                     <i class="fas fa-arrow-left me-2"></i> Return to Dashboard
                                 </a>
                             </div>
@@ -360,7 +366,6 @@ if (isset($_GET['id'])) {
             </body>
             </html>
             ';
-            
         }
     } else {
         // Display visitor not found error with Bootstrap styling
@@ -419,4 +424,3 @@ if (isset($_GET['id'])) {
     ';
 }
 ?>
-
