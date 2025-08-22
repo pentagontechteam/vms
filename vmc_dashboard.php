@@ -374,6 +374,7 @@ function generate_pagination($total_pages, $current_page, $tab, $search_term, $a
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -386,6 +387,9 @@ function generate_pagination($total_pages, $current_page, $tab, $search_term, $a
             --dark: #007570;
             --light: #F8F9FA;
             --white: #FFFFFF;
+        }
+        .font-montserrat {
+            font-family: 'Montserrat', sans-serif;
         }
         body {
             background: #F5F7FA;
@@ -487,7 +491,7 @@ function generate_pagination($total_pages, $current_page, $tab, $search_term, $a
 }
 
 .venue-font {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .text-font {
@@ -539,7 +543,7 @@ function generate_pagination($total_pages, $current_page, $tab, $search_term, $a
 }
 
 .venue-font {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .text-font {
@@ -591,7 +595,7 @@ function generate_pagination($total_pages, $current_page, $tab, $search_term, $a
 }
 
 .venue-font {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .text-font {
@@ -1843,82 +1847,131 @@ body {
         <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header" style="background: var(--primary); color: white;">
+            <div class="modal-header" style="background: var(--dark); color: white;">
                 <h5 class="modal-title">Visitor Card</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="d-flex justify-content-center p-4">
-                    <div id="cardPreview" style="width: 100%; max-width: 400px;">
-                        <div class="bg-white w-80 h-[500px] shadow-xl flex overflow-hidden relative pass-body">
-                            <!-- Corner Decorations -->
-                            <div class="corner-decoration top-left"></div>
-                            <div class="corner-decoration top-right"></div>
-                            <div class="corner-decoration bottom-left"></div>
-                            <div class="corner-decoration bottom-right"></div>
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs justify-content-center mb-3" id="cardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="front-tab" data-bs-toggle="tab" data-bs-target="#front-card" type="button" role="tab">
+                Front
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="back-tab" data-bs-toggle="tab" data-bs-target="#back-card" type="button" role="tab">
+                Back
+            </button>
+        </li>
+    </ul>
 
-                            <!-- Left Sidebar -->
-                           <div class="bg-[#007570] w-16 flex items-center justify-center relative">
-    <div class="rotate-text text-white font-bold text-3xl tracking-wider">
-        VISITOR PASS
-    </div>
-</div>
-<!-- Main Content -->
-<div class="flex-1 p-6 relative flex flex-col">
-    <!-- Header -->
-    <div class="flex items-center justify-center mb-8">
-        <img src="assets/logo-green-yellow.png" alt="Logo" class="max-w-[180px] h-auto">
-    </div>
-    
-    <!-- Venue Information -->
-    <div class="mb-8 text-center">
-        <div class="text-2xl font-bold text-gray-800 mb-3 venue-font">
-            <strong>Venue:</strong><br><span id="visitorFloor">
-           
-        </span>
+    <!-- Tab Content -->
+    <div class="tab-content" id="cardTabsContent">
+        <!-- Front Card Tab -->
+        <div class="tab-pane fade show active" id="front-card" role="tabpanel">
+            <div class="d-flex justify-content-center p-4">
+                <div id="frontCardPreview" style="width: 100%; max-width: 400px;">
+    <div class="mx-auto bg-white w-[204px] h-[325px] shadow-xl flex overflow-hidden relative pass-body print:w-[204px] print:h-[325px]">
+        <!-- Corner Decorations - Only top-right and bottom-right -->
+        <div class="absolute top-0 right-0 w-[18px] h-[18px] border-t-2 border-r-2 border-[#0d9488]"></div>
+        <div class="absolute bottom-0 right-0 w-[18px] h-[18px] border-b-2 border-r-2 border-[#0d9488]"></div>
+        
+        <!-- Left Sidebar -->
+        <div class="bg-[#007570] w-12 flex items-center justify-center relative overflow-hidden">
+            <div class="transform rotate-270 [writing-mode:vertical-lr] [text-orientation:mixed] text-white font-bold text-base tracking-wide" style="font-size: 23px;">
+                VISITOR PASS
+            </div>
+            <!-- Subtle diagonal pattern -->
+            <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzAgMTVMMTUgMzAgMzAgNDUgNDUgMzB6IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+PC9zdmc+')]"></div>
         </div>
         
-        <div class="text-2xl font-bold text-gray-800 venue-font">
-            Pass ID: 001
-        </div>
-    </div>
-
-    <!-- Divider -->
-    <div class="w-3/4 h-[2px] bg-gradient-to-r from-transparent via-[#0d9488] to-transparent mx-auto my-6 rounded-full"></div>
-
-    <!-- Details 
-    <div class="text-font" style="margin-bottom: 1.5rem;">
-        <div cla ss="mb-2"><strong>Name:</strong> <span id="visitorName"></span></div>
-        <div class="mb-2"><strong>Organization:</strong> <span id="visitorOrg"></span></div>
-        <div class="mb-2"><strong>Date:</strong> <span id="visitorDate"></span></div>
-        <div><strong>Host:</strong> <span id="visitorHost"></span></div>
-    </div> -->
-
-    <!-- Notice -->
-    <div class="mb-8 text-center z-20">
-                                            <div class="text-lg font-semibold text-gray-800 leading-relaxed text-font">
-                                                Must be visibly worn at all times while on premises
-                                            </div>
-                                        </div>
-
-    <!-- Fixed Bottom-Right Logo -->
-                                        <div class="absolute bottom-0 right-0 z-10">
-                                            <img src="assets/Picture3.png" alt="Bottom Logo" class="h-[8rem] opacity-30" />
-                                        </div>
-                                        
-                                        <!-- Subtle pattern overlay -->
-                                        <div class="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzAgMTVMMTUgMzAgMzAgNDUgNDUgMzB6IiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+PC9zdmc+')]"></div>
-</div>
-                        </div>
+        <!-- Main Content -->
+        <div class="flex-1 px-3 py-4 relative flex flex-col">
+            <!-- Top Logo -->
+            <div class="flex items-center justify-center mb-3">
+                <img src="assets/logo-green-yellow.png" alt="Logo" class="max-w-[90px] h-auto" />
+            </div>
+            
+            <!-- Content -->
+            <div class="px-2 py-1 flex-1 flex flex-col z-20 justify-center text-center">
+                
+                <!-- Venue Information -->
+                <div class="mb-3">
+                    <div class="text-2x1 font-bold text-gray-800 venue-font" style="line-height: 1.2;">
+                        Venue: <br>
+                        <span id="visitorFloor"></span>
                     </div>
                 </div>
-                <!-- Print Section -->
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-primary" onclick="printVisitorCard()">
-                        <i class="bi bi-printer me-1"></i> Print Card
-                    </button>
+                <div class="mb-3">
+                    <div class="text-2x1 font-bold text-gray-800 venue-font">
+                        Pass ID: 001
+                    </div>
+                </div>
+                
+                <!-- Decorative divider -->
+                <div class="w-4/5 h-[1px] bg-gradient-to-r from-transparent via-[#0d9488] to-transparent mx-auto my-4 rounded-full"></div>
+                
+                <!-- Important Notice -->
+                <div class="text-center z-20">
+                    <div class="text-xs font-medium text-gray-700 leading-tight">
+                        Must be visibly worn at all times while on premises
+                    </div>
                 </div>
             </div>
+            
+            <!-- Bottom Logo -->
+            <div class="absolute bottom-1 right-1 z-10">
+                <img src="assets/Picture3.png" alt="Bottom Logo" class="h-[3.5rem] opacity-25" />
+            </div>
+            
+            <!-- Subtle background pattern -->
+            <div class="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzAgMTVMMTUgMzAgMzAgNDUgNDUgMzB6IiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+PC9zdmc+')]"></div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+
+        <!-- Back Card Tab -->
+        <!-- Back Card Tab -->
+<div class="tab-pane fade" id="back-card" role="tabpanel">
+    <div class="d-flex justify-content-center p-4">
+        <div id="backCardPreview" style="width: 100%; max-width: 400px;">
+            <div class="mx-auto bg-white w-[204px] h-[325px] shadow-xl flex overflow-hidden relative pass-body print:w-[204px] print:h-[325px]">
+                <!-- Main Content -->
+                <div id="backCardPreview" style="width: 100%; max-width: 400px;">
+            <div style="
+                width: 204px; 
+                height: 325px; 
+                margin: 0 auto;
+                background-image: url('assets/back.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color-adjust: exact;
+            ">
+                <!-- The image is now the background of this div -->
+                <!-- You can add any overlay content here if needed -->
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <!-- Print Section -->
+    <div class="text-center mt-3">
+        <button class="btn btn-outline-primary" onclick="printVisitorCard()">
+            <i class="bi bi-printer me-1"></i> Print Card
+        </button>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -1964,16 +2017,169 @@ function openCameraModal(id, name, host, org, date, floor) {
 }
 
 function printVisitorCard() {
-    const printContent = document.getElementById('cardPreview').innerHTML;
+    // Get the current venue text from the modal
+    const visitorFloor = document.getElementById('visitorFloor');
+    
+    // Determine which tab is active
+    const frontTab = document.querySelector('#front-tab');
+    const backTab = document.querySelector('#back-tab');
+    
+    let printContent;
+    if (frontTab && frontTab.classList.contains('active')) {
+        printContent = document.getElementById('frontCardPreview').innerHTML;
+    } else if (backTab && backTab.classList.contains('active')) {
+        printContent = document.getElementById('backCardPreview').innerHTML;
+    } else {
+        printContent = document.getElementById('frontCardPreview').innerHTML;
+    }
+    
     const originalContent = document.body.innerHTML;
     
     document.body.innerHTML = `
         <style>
-            @page { size: auto; margin: 0mm; }
-            body { padding: 10px; }
-            .corner-decoration { display: none; }
+            @page { 
+                size: 53.98mm 85.60mm; /* CR-80 PORTRAIT: width × height */
+                margin: 0mm; 
+            }
+            body { 
+                padding: 0; 
+                margin: 0;
+                width: 53.98mm;
+                height: 85.60mm;
+                overflow: hidden;
+            }
+
+            /* Override card container to fit print dimensions - CR-80 Portrait */
+                .bg-white, .w-80, .w-[204px] {
+                width: 53.98mm !important;
+                height: 85.60mm !important;
+                max-width: none !important;
+                box-shadow: none !important;
+            }
+
+            /* Updated print classes support */
+                .print\\:w-\\[204px\\] {
+                width: 53.98mm !important;
+            }
+            .print\\:h-\\[325px\\] {
+                height: 85.60mm !important;
+            }
+            
+            /* Adjust card content scaling */
+            .flex {
+                display: flex !important;
+            }
+            
+            /* Scale text and elements for print - Updated sizes for "after" version */
+            .text-2xl { font-size: 10pt !important; } /* Reduced from 12pt */
+            .text-lg { font-size: 8pt !important; }  /* Reduced from 10pt */
+            .text-sm { font-size: 7pt !important; }  /* New for "after" version */
+            .text-3xl { font-size: 12pt !important; } /* Reduced from 14pt */
+            
+            /* Corner decorations - Updated for "after" version (smaller, fewer corners) */
+            .w-\\[30px\\] { width: 6mm !important; }  /* Scale down original */
+            .h-\\[30px\\] { height: 6mm !important; }
+            .w-\\[18px\\] { width: 4mm !important; }  /* Scale down "after" version */
+            .h-\\[18px\\] { height: 4mm !important; }
+            
+            /* Ensure background colors print */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Scale padding and margins - Updated for "after" version */
+            .p-6 { padding: 2mm !important; }    /* Reduced from 3mm */
+            .p-4 { padding: 1.5mm !important; }  /* Reduced from 2mm */
+            .p-2 { padding: 1mm !important; }    /* New for "after" version */
+            .mb-8 { margin-bottom: 3mm !important; } /* Reduced from 4mm */
+            .mb-6 { margin-bottom: 2mm !important; } /* Reduced from 3mm */
+            .mb-4 { margin-bottom: 1.5mm !important; } /* New for "after" version */
+            .mb-3 { margin-bottom: 1mm !important; } /* Reduced from 2mm */
+            .mb-2 { margin-bottom: 0.8mm !important; } /* New for "after" version */
+            .my-3 { margin-top: 1mm !important; margin-bottom: 1mm !important; } /* New for "after" version */
+            
+            /* Adjust logo sizing - Updated for "after" version */
+            img {
+                max-width: 25mm !important;  /* Reduced from 40mm */
+                height: auto !important;
+            }
+            .max-w-\\[180px\\] {
+                max-width: 35mm !important; /* For any remaining large logos */
+            }
+            .max-w-\\[120px\\] {
+                max-width: 25mm !important; /* Updated from original */
+            }
+            .max-w-\\[100px\\] {
+                max-width: 20mm !important; /* New for "after" version */
+            }
+            
+            /* Scale the sidebar - Updated for "after" version */
+            .w-16 {
+                width: 8mm !important;    /* Reduced from 12mm */
+            }
+            .w-10 {
+                width: 6mm !important;    /* New for "after" version */
+            }
+            
+            /* Bottom logo scaling - Updated for "after" version */
+            .h-\\[9rem\\] {
+                height: 20mm !important;  /* Original size */
+            }
+            .h-\\[8rem\\] {
+                height: 18mm !important;  /* Intermediate size */
+            }
+            .h-\\[4rem\\] {
+                height: 10mm !important;  /* New "after" version - much smaller */
+            }
+            
+            /* Bottom positioning updates */
+            .bottom-1 {
+                bottom: 0.5mm !important;
+            }
+            .right-1 {
+                right: 0.5mm !important;
+            }
+            
+            /* Ensure flex-1 works properly */
+            .flex-1 {
+                flex: 1 !important;
+            }
+            
+            /* Vertical text scaling for sidebar */
+            .tracking-wider {
+                letter-spacing: 0.5mm !important;
+            }
+            
+            /* Gradient divider scaling */
+            .w-3\\/4 {
+                width: 75% !important;
+            }
+            .h-\\[2px\\] {
+                height: 0.5mm !important;
+            }
+            
+            /* Text alignment and spacing */
+            .leading-tight {
+                line-height: 1.1 !important;
+            }
+            .leading-relaxed {
+                line-height: 1.3 !important;
+            }
+            
+            /* Print-specific overrides for exact dimensions */
+            @media print {
+                .w-\\[204px\\] {
+                width: 53.98mm !important;
+            }
+                .h-\\[325px\\] {
+                height: 85.60mm !important;
+                }
+            }
         </style>
-        ${printContent}
+        <div style="width: 53.98mm; height: 85.60mm; overflow: hidden;">
+            ${printContent}
+        </div>
     `;
     
     window.print();
@@ -2217,22 +2423,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Force page refresh when any tab is clicked
-    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            // Prevent default Bootstrap tab behavior
-            e.preventDefault();
-            
-            // Get the tab ID from data-bs-target
-            const tabId = this.getAttribute('data-bs-target').replace('#', '');
-            
-            // Get current URL and update the active_tab parameter
-            const url = new URL(window.location.href);
-            url.searchParams.set('active_tab', tabId);
-            
-            // Force page reload with new URL
-            window.location.href = url.toString();
-        });
+    // Force page refresh ONLY for main dashboard tabs
+document.querySelectorAll('[data-bs-toggle="tab"]:not(#cardTabs [data-bs-toggle="tab"])').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        // Prevent default Bootstrap tab behavior
+        e.preventDefault();
+        
+        // Get the tab ID from data-bs-target
+        const tabId = this.getAttribute('data-bs-target').replace('#', '');
+        
+        // Get current URL and update the active_tab parameter
+        const url = new URL(window.location.href);
+        url.searchParams.set('active_tab', tabId);
+        
+        // Force page reload with new URL
+        window.location.href = url.toString();
     });
+});
     
     // Initialize the correct tab on page load
     const urlParams = new URLSearchParams(window.location.search);

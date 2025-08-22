@@ -306,8 +306,8 @@ $conn->close();
                                         <option value="Floor 4 - Left Wing">Floor 4 - Left Wing</option>
                                         <option value="Floor 5 - Right Wing">Floor 5 - Right Wing</option>
                                         <option value="Floor 5 - Left Wing">Floor 5 - Left Wing</option>
-                                        <option value="Floor 6 - Right Wing">Floor 6 - Right Wing</option>
-                                        <option value="Floor 6 - Left Wing">Floor 6 - Left Wing</option>
+                                        <option value="Floor 6 - Right Wing">Floor 6 -  Right Wing</option>
+                                        <option value="Floor 6 - Left Wing">Floor 6 - Left Wing </option>
                                         <option value="Floor 7 - Right Wing">Floor 7 - Right Wing</option>
                                         <option value="Floor 7 - Left Wing">Floor 7 - Left Wing</option>
                                         <option value="Floor 8 - Right Wing">Floor 8 - Right Wing</option>

@@ -14712,3 +14712,134 @@ Stack trace:
 [14-Aug-2025 13:07:03 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
 [14-Aug-2025 13:07:03 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
 [14-Aug-2025 13:07:03 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[14-Aug-2025 13:48:06 Africa/Lagos] PHP Warning:  Undefined variable $role in /home/aatcabuj/public_html/staff_dashboard.php on line 24
+[14-Aug-2025 14:17:31 Africa/Lagos] PHP Warning:  Undefined variable $role in /home/aatcabuj/public_html/staff_dashboard.php on line 24
+[14-Aug-2025 14:31:43 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[14-Aug-2025 14:31:43 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[14-Aug-2025 14:31:43 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[14-Aug-2025 14:40:12 Africa/Lagos] PHP Warning:  Undefined variable $role in /home/aatcabuj/public_html/staff_dashboard.php on line 24
+[14-Aug-2025 14:42:36 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[14-Aug-2025 14:42:36 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[14-Aug-2025 15:55:03 Africa/Lagos] PHP Warning:  Undefined array key "visit_date" in /home/aatcabuj/public_html/export_visitors.php on line 109
+[15-Aug-2025 07:46:08 Africa/Lagos] PHP Warning:  Undefined variable $role in /home/aatcabuj/public_html/staff_dashboard.php on line 24
+[15-Aug-2025 08:19:03 Africa/Lagos] Getting employees for page: 1
+[15-Aug-2025 08:19:03 Africa/Lagos] Retrieved 6 employees
+[15-Aug-2025 08:19:33 Africa/Lagos] Getting employees for page: 1
+[15-Aug-2025 08:19:33 Africa/Lagos] Retrieved 6 employees
+[15-Aug-2025 08:20:04 Africa/Lagos] Getting employees for page: 1
+[15-Aug-2025 08:20:04 Africa/Lagos] Retrieved 6 employees
+[15-Aug-2025 08:20:06 Africa/Lagos] Creating employee with data: {"name":"lucky","email":"luckydio10@gmail.com","country_code":"+234","phone":"7067367057","designation":"IT","department":"IT","organization":"Pentagon Securities","can_host":true}
+[15-Aug-2025 08:20:06 Africa/Lagos] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #4 cannot be passed by reference in /home/aatcabuj/public_html/employees_api.php:320
+Stack trace:
+#0 /home/aatcabuj/public_html/employees_api.php(49): createEmployee()
+#1 {main}
+  thrown in /home/aatcabuj/public_html/employees_api.php on line 320
+[15-Aug-2025 09:33:24 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[15-Aug-2025 09:33:24 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[15-Aug-2025 09:49:02 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[15-Aug-2025 09:49:02 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[15-Aug-2025 11:02:23 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[15-Aug-2025 11:02:23 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 14:44:15 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 14:44:15 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 14:50:37 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 14:50:37 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:21:14 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:21:14 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:26:06 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:26:06 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:34:09 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[18-Aug-2025 15:34:09 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:00:43 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:00:43 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:00:43 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:00:43 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:30:41 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 12:30:41 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 14:17:15 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 14:17:15 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 15:59:32 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 15:59:32 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:07:25 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:07:25 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:18:00 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:18:00 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:48:50 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[19-Aug-2025 16:48:50 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 09:20:16 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 09:20:16 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 09:54:52 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 09:54:52 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 10:54:36 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 10:54:36 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:42:03 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[20-Aug-2025 12:56:06 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:56:06 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:58:22 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 12:58:22 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 13:12:21 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 13:12:21 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 13:14:07 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 13:14:07 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 15:35:34 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 15:35:34 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 15:35:34 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[20-Aug-2025 16:52:08 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 16:52:08 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 17:30:29 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[20-Aug-2025 17:30:29 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 10:16:58 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 10:16:58 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 10:38:43 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 10:38:43 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:19:18 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:19:18 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:22:47 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:22:47 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:57:40 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:57:40 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:57:40 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 11:57:40 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 12:11:11 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 12:11:11 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 12:19:55 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 12:19:55 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 13:44:01 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 13:44:01 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 13:59:06 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 13:59:06 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 14:44:57 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 14:44:57 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 15:56:08 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 15:56:08 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 16:01:32 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[21-Aug-2025 16:01:32 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 10:39:44 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 10:39:44 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 10:54:29 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 10:54:29 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 12:42:43 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 12:42:43 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 12:47:36 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 12:47:36 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 13:13:40 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 13:13:40 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 13:13:40 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[22-Aug-2025 13:20:56 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 13:20:56 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 13:20:56 Africa/Lagos] PHP Warning:  Undefined array key "receptionist_id" in /home/aatcabuj/public_html/register_walkin.php on line 58
+[22-Aug-2025 14:18:47 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 14:18:47 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 14:26:57 Africa/Lagos] PHP Warning:  Undefined array key "email" in /home/aatcabuj/public_html/register_walkin.php on line 34
+[22-Aug-2025 14:26:57 Africa/Lagos] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in /home/aatcabuj/public_html/register_walkin.php on line 34

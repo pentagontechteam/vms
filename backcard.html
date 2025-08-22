@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visitor Pass</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .rotate-text {
+      writing-mode: vertical-lr;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+    }
+    
+    .ornamental-border {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 12px solid transparent;
+      border-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="%23b91c1c" stroke-width="4" stroke-dasharray="10,5" stroke-linecap="round"/></svg>') 12 round;
+      pointer-events: none;
+    }
+    
+    .corner-decoration {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-color: #0d9488;
+      border-width: 2px;
+    }
+    
+    .top-left {
+      top: 0;
+      left: 0;
+      border-right: none;
+      border-bottom: none;
+    }
+    
+    .top-right {
+      top: 0;
+      right: 0;
+      border-left: none;
+      border-bottom: none;
+    }
+    
+    .bottom-left {
+      bottom: 0;
+      left: 0;
+      border-right: none;
+      border-top: none;
+    }
+    
+    .bottom-right {
+      bottom: 0;
+      right: 0;
+      border-left: none;
+      border-top: none;
+    }
+    
+    .pass-body {
+      background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,245,245,0.9) 100%);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white w-80 h-[500px] shadow-xl flex overflow-hidden relative pass-body">
+    <!-- Ornamental Border -->
+    <!-- <div class="ornamental-border"></div> -->
+    
+    <!-- Corner Decorations -->
+    <!-- <div class="corner-decoration top-left"></div>
+    <div class="corner-decoration top-right"></div>
+    <div class="corner-decoration bottom-left"></div>
+    <div class="corner-decoration bottom-right"></div> -->
+    
+    <!-- Main Content -->
+    <div class="flex-1 p-4 relative flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-center mb-6">
+        <img src="./Picture2.png" alt="Top Logo" class="w-[10rem] h-auto" />
+      </div>
+
+      <!-- Dashed Border Container -->
+      <div class="p-4 flex-1 flex flex-col z-20 pt-[2.5rem] items-center">
+        <!-- Decorative element -->
+        <div class="w-3/4 h-1 bg-gradient-to-r from-transparent via-[#0d9488] to-transparent mb-6 rounded-full"></div>
+    
+        <div class="mb-6 text-center">
+          <div class="text-base font-medium text-red-700 leading-relaxed">
+            This Pass is a property of Afreximbank African Trade Center.
+          </div>
+        </div>
+
+        <div class="mb-6 text-center">
+            <div class="text-base font-medium text-gray-800">
+                Return this pass at the end of your visit.
+            </div>
+        </div>
+     
+        <div class="text-center">
+          <div class="text-base font-medium text-gray-800">
+            If found please return to Afreximbank African Trade Center Abuja.
+          </div>
+        </div>
+        
+        <!-- Decorative element -->
+        <div class="w-3/4 h-1 bg-gradient-to-r from-transparent via-[#0d9488] to-transparent mt-6 rounded-full"></div>
+      </div>
+
+      <!-- Fixed Bottom-Right Logo -->
+      <div class="absolute bottom-0 right-0 z-10">
+        <img src="./Picture.png" alt="Bottom Logo" class="h-[10rem] opacity-40" />
+      </div>
+      
+      <!-- Subtle pattern overlay -->
+      <div class="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzAgMTVMMTUgMzAgMzAgNDUgNDUgMzB6IiBzdHJva2U9IiNmZmFjMTAiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+PC9zdmc+')]"></div>
+    </div>
+  </div>
+</body>
+</html>

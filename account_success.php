@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>Account Created - AATC Visitor Management</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Bootstrap CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
@@ -23,7 +24,7 @@
     .success-box {
       background-color: white;
       border-radius: 2rem;
-      box-shadow: 0 10px 25px rgba(67, 238, 160, 0.15);
+      box-shadow: 0 10px 25px rgba(67, 238, 160, 0.15); /* Changed blue shadow to greenish */
       padding: 3rem;
       text-align: center;
       max-width: 500px;
@@ -33,12 +34,12 @@
 
     .success-icon {
       font-size: 3rem;
-      color: #4ccf88;
+      color: #4ccf88; /* green */
       margin-bottom: 1rem;
     }
 
     h1 {
-      color: #2a9d8f;
+      color: #2a9d8f; /* green */
       font-weight: 800;
       font-size: 2rem;
     }
@@ -50,7 +51,7 @@
     }
 
     .btn-custom {
-      background-color: #2a9d8f;
+      background-color: #2a9d8f; /* green */
       color: white;
       font-weight: 600;
       padding: 0.75rem 1.5rem;
@@ -60,24 +61,16 @@
     }
 
     .btn-custom:hover {
-      background-color: #21867a;
+      background-color: #21867a; /* darker green */
       color: white;
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-
 <body>
 
   <div class="success-box">
@@ -88,5 +81,4 @@
   </div>
 
 </body>
-
 </html>
