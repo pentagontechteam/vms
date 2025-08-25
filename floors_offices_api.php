@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Floors & Offices Management API
  * File: floors_offices_api.php
@@ -21,12 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $conn->connect_error]);
-    exit();
-}
+require 'db_connection.php';
 
 // Set charset and timezone
 $conn->set_charset("utf8");
@@ -103,13 +99,26 @@ try {
         default:
             http_response_code(400);
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Invalid action specified',
                 'available_actions' => [
-                    'test', 'get_all', 'create_floor', 'update_floor', 'delete_floor', 'toggle_floor_status',
-                    'create_office', 'update_office', 'delete_office', 'toggle_office_status',
-                    'upload_maps', 'get_recent_maps', 'get_all_maps', 'view_map', 'delete_map',
-                    'export', 'get_statistics'
+                    'test',
+                    'get_all',
+                    'create_floor',
+                    'update_floor',
+                    'delete_floor',
+                    'toggle_floor_status',
+                    'create_office',
+                    'update_office',
+                    'delete_office',
+                    'toggle_office_status',
+                    'upload_maps',
+                    'get_recent_maps',
+                    'get_all_maps',
+                    'view_map',
+                    'delete_map',
+                    'export',
+                    'get_statistics'
                 ]
             ]);
             break;
@@ -127,7 +136,7 @@ try {
  */
 function createTablesIfNotExist() {
     global $conn;
-    
+
     // Create floors table
     $floorsTable = "
         CREATE TABLE IF NOT EXISTS floors (
@@ -142,7 +151,7 @@ function createTablesIfNotExist() {
             INDEX idx_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ";
-    
+
     // Create offices table
     $officesTable = "
         CREATE TABLE IF NOT EXISTS offices (
@@ -160,7 +169,7 @@ function createTablesIfNotExist() {
             INDEX idx_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ";
-    
+
     // Create floor_maps table
     $mapsTable = "
         CREATE TABLE IF NOT EXISTS floor_maps (
@@ -177,11 +186,11 @@ function createTablesIfNotExist() {
             INDEX idx_uploaded_at (uploaded_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ";
-    
+
     $conn->query($floorsTable);
     $conn->query($officesTable);
     $conn->query($mapsTable);
-    
+
     if ($conn->error) {
         error_log("Error creating tables: " . $conn->error);
     }
@@ -192,27 +201,27 @@ function createTablesIfNotExist() {
  */
 function handleTest() {
     global $conn;
-    
+
     $response = [
         'success' => true,
         'message' => 'Floors & Offices API is working correctly',
         'timestamp' => date('Y-m-d H:i:s'),
         'database_status' => 'connected'
     ];
-    
+
     // Test database connection and tables
     $result = $conn->query("SELECT COUNT(*) as total FROM floors");
     if ($result) {
         $row = $result->fetch_assoc();
         $response['floors_count'] = (int)$row['total'];
     }
-    
+
     $result = $conn->query("SELECT COUNT(*) as total FROM offices");
     if ($result) {
         $row = $result->fetch_assoc();
         $response['offices_count'] = (int)$row['total'];
     }
-    
+
     echo json_encode($response, JSON_PRETTY_PRINT);
 }
 
@@ -221,7 +230,7 @@ function handleTest() {
  */
 function handleGetAll() {
     global $conn;
-    
+
     // Get floors with visitor counts
     $floorsQuery = "
         SELECT 
@@ -254,12 +263,12 @@ function handleGetAll() {
         ) m ON f.id = m.floor_id
         ORDER BY f.floor_number
     ";
-    
+
     $floorsResult = $conn->query($floorsQuery);
     if (!$floorsResult) {
         throw new Exception("Floors query failed: " . $conn->error);
     }
-    
+
     $floors = [];
     while ($row = $floorsResult->fetch_assoc()) {
         $floors[] = [
@@ -275,7 +284,7 @@ function handleGetAll() {
             'updated_at' => $row['updated_at']
         ];
     }
-    
+
     // Get offices with visitor counts
     $officesQuery = "
         SELECT 
@@ -305,12 +314,12 @@ function handleGetAll() {
         ) v ON CONCAT(f.floor_number, ' - ', o.office_name) = v.office_location
         ORDER BY f.floor_number, o.office_name
     ";
-    
+
     $officesResult = $conn->query($officesQuery);
     if (!$officesResult) {
         throw new Exception("Offices query failed: " . $conn->error);
     }
-    
+
     $offices = [];
     while ($row = $officesResult->fetch_assoc()) {
         $offices[] = [
@@ -327,10 +336,10 @@ function handleGetAll() {
             'updated_at' => $row['updated_at']
         ];
     }
-    
+
     // Get overall statistics
     $statistics = getOverallStatistics();
-    
+
     $response = [
         'success' => true,
         'floors' => $floors,
@@ -342,7 +351,7 @@ function handleGetAll() {
             'total_locations' => count($floors) + count($offices)
         ]
     ];
-    
+
     echo json_encode($response, JSON_NUMERIC_CHECK);
 }
 
@@ -351,33 +360,33 @@ function handleGetAll() {
  */
 function handleCreateFloor() {
     global $conn;
-    
+
     $floor_number = trim($_POST['floor_number'] ?? '');
     $floor_name = trim($_POST['floor_name'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : true;
-    
+
     if (empty($floor_number)) {
         echo json_encode(['success' => false, 'message' => 'Floor number is required']);
         return;
     }
-    
+
     // Check if floor number already exists
     $stmt = $conn->prepare("SELECT id FROM floors WHERE floor_number = ?");
     $stmt->bind_param("s", $floor_number);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         echo json_encode(['success' => false, 'message' => 'Floor number already exists']);
         return;
     }
     $stmt->close();
-    
+
     // Insert new floor
     $stmt = $conn->prepare("INSERT INTO floors (floor_number, floor_name, description, is_active) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("sssi", $floor_number, $floor_name, $description, $is_active);
-    
+
     if ($stmt->execute()) {
         $newId = $conn->insert_id;
         echo json_encode([
@@ -388,7 +397,7 @@ function handleCreateFloor() {
     } else {
         throw new Exception("Failed to create floor: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -397,39 +406,39 @@ function handleCreateFloor() {
  */
 function handleUpdateFloor() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid floor ID']);
         return;
     }
-    
+
     $floor_number = trim($_POST['floor_number'] ?? '');
     $floor_name = trim($_POST['floor_name'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : true;
-    
+
     if (empty($floor_number)) {
         echo json_encode(['success' => false, 'message' => 'Floor number is required']);
         return;
     }
-    
+
     // Check if floor number already exists for other floors
     $stmt = $conn->prepare("SELECT id FROM floors WHERE floor_number = ? AND id != ?");
     $stmt->bind_param("si", $floor_number, $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         echo json_encode(['success' => false, 'message' => 'Floor number already exists']);
         return;
     }
     $stmt->close();
-    
+
     // Update floor
     $stmt = $conn->prepare("UPDATE floors SET floor_number = ?, floor_name = ?, description = ?, is_active = ? WHERE id = ?");
     $stmt->bind_param("sssii", $floor_number, $floor_name, $description, $is_active, $id);
-    
+
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Floor updated successfully']);
@@ -439,7 +448,7 @@ function handleUpdateFloor() {
     } else {
         throw new Exception("Failed to update floor: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -448,38 +457,38 @@ function handleUpdateFloor() {
  */
 function handleDeleteFloor() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid floor ID']);
         return;
     }
-    
+
     $conn->autocommit(FALSE);
-    
+
     try {
         // Delete related maps first
         $stmt = $conn->prepare("DELETE FROM floor_maps WHERE floor_id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $stmt->close();
-        
+
         // Delete related offices
         $stmt = $conn->prepare("DELETE FROM offices WHERE floor_id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $deletedOffices = $stmt->affected_rows;
         $stmt->close();
-        
+
         // Delete the floor
         $stmt = $conn->prepare("DELETE FROM floors WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $deletedFloor = $stmt->affected_rows;
         $stmt->close();
-        
+
         $conn->commit();
-        
+
         if ($deletedFloor > 0) {
             $message = 'Floor deleted successfully';
             if ($deletedOffices > 0) {
@@ -489,7 +498,6 @@ function handleDeleteFloor() {
         } else {
             echo json_encode(['success' => false, 'message' => 'Floor not found']);
         }
-        
     } catch (Exception $e) {
         $conn->rollback();
         throw $e;
@@ -503,18 +511,18 @@ function handleDeleteFloor() {
  */
 function handleToggleFloorStatus() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid floor ID']);
         return;
     }
-    
+
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : false;
-    
+
     $stmt = $conn->prepare("UPDATE floors SET is_active = ? WHERE id = ?");
     $stmt->bind_param("ii", $is_active, $id);
-    
+
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Floor status updated successfully']);
@@ -524,7 +532,7 @@ function handleToggleFloorStatus() {
     } else {
         throw new Exception("Failed to update floor status: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -533,39 +541,39 @@ function handleToggleFloorStatus() {
  */
 function handleCreateOffice() {
     global $conn;
-    
+
     $floor_id = intval($_POST['floor_id'] ?? 0);
     $office_name = trim($_POST['office_name'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $capacity = !empty($_POST['capacity']) ? intval($_POST['capacity']) : null;
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : true;
-    
+
     if ($floor_id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Please select a valid floor']);
         return;
     }
-    
+
     if (empty($office_name)) {
         echo json_encode(['success' => false, 'message' => 'Office name is required']);
         return;
     }
-    
+
     // Check if office name already exists on the same floor
     $stmt = $conn->prepare("SELECT id FROM offices WHERE floor_id = ? AND office_name = ?");
     $stmt->bind_param("is", $floor_id, $office_name);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         echo json_encode(['success' => false, 'message' => 'Office name already exists on this floor']);
         return;
     }
     $stmt->close();
-    
+
     // Insert new office
     $stmt = $conn->prepare("INSERT INTO offices (floor_id, office_name, department, capacity, is_active) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("issii", $floor_id, $office_name, $department, $capacity, $is_active);
-    
+
     if ($stmt->execute()) {
         $newId = $conn->insert_id;
         echo json_encode([
@@ -576,7 +584,7 @@ function handleCreateOffice() {
     } else {
         throw new Exception("Failed to create office: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -585,45 +593,45 @@ function handleCreateOffice() {
  */
 function handleUpdateOffice() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid office ID']);
         return;
     }
-    
+
     $floor_id = intval($_POST['floor_id'] ?? 0);
     $office_name = trim($_POST['office_name'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $capacity = !empty($_POST['capacity']) ? intval($_POST['capacity']) : null;
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : true;
-    
+
     if ($floor_id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Please select a valid floor']);
         return;
     }
-    
+
     if (empty($office_name)) {
         echo json_encode(['success' => false, 'message' => 'Office name is required']);
         return;
     }
-    
+
     // Check if office name already exists on the same floor for other offices
     $stmt = $conn->prepare("SELECT id FROM offices WHERE floor_id = ? AND office_name = ? AND id != ?");
     $stmt->bind_param("isi", $floor_id, $office_name, $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         echo json_encode(['success' => false, 'message' => 'Office name already exists on this floor']);
         return;
     }
     $stmt->close();
-    
+
     // Update office
     $stmt = $conn->prepare("UPDATE offices SET floor_id = ?, office_name = ?, department = ?, capacity = ?, is_active = ? WHERE id = ?");
     $stmt->bind_param("issiii", $floor_id, $office_name, $department, $capacity, $is_active, $id);
-    
+
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Office updated successfully']);
@@ -633,7 +641,7 @@ function handleUpdateOffice() {
     } else {
         throw new Exception("Failed to update office: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -642,16 +650,16 @@ function handleUpdateOffice() {
  */
 function handleDeleteOffice() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid office ID']);
         return;
     }
-    
+
     $stmt = $conn->prepare("DELETE FROM offices WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
+
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Office deleted successfully']);
@@ -661,7 +669,7 @@ function handleDeleteOffice() {
     } else {
         throw new Exception("Failed to delete office: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -670,18 +678,18 @@ function handleDeleteOffice() {
  */
 function handleToggleOfficeStatus() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid office ID']);
         return;
     }
-    
+
     $is_active = isset($_POST['is_active']) ? (bool)$_POST['is_active'] : false;
-    
+
     $stmt = $conn->prepare("UPDATE offices SET is_active = ? WHERE id = ?");
     $stmt->bind_param("ii", $is_active, $id);
-    
+
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
             echo json_encode(['success' => true, 'message' => 'Office status updated successfully']);
@@ -691,7 +699,7 @@ function handleToggleOfficeStatus() {
     } else {
         throw new Exception("Failed to update office status: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -700,60 +708,60 @@ function handleToggleOfficeStatus() {
  */
 function handleUploadMaps() {
     global $conn;
-    
+
     if (empty($_FILES['maps'])) {
         echo json_encode(['success' => false, 'message' => 'No files uploaded']);
         return;
     }
-    
+
     $uploadDir = 'uploads/floor_maps/';
-    
+
     // Create upload directory if it doesn't exist
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    
+
     $uploadedFiles = [];
     $errors = [];
-    
+
     $files = $_FILES['maps'];
     $fileCount = is_array($files['name']) ? count($files['name']) : 1;
-    
+
     for ($i = 0; $i < $fileCount; $i++) {
         $fileName = is_array($files['name']) ? $files['name'][$i] : $files['name'];
         $fileTmpName = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
         $fileSize = is_array($files['size']) ? $files['size'][$i] : $files['size'];
         $fileError = is_array($files['error']) ? $files['error'][$i] : $files['error'];
         $fileType = is_array($files['type']) ? $files['type'][$i] : $files['type'];
-        
+
         if ($fileError !== UPLOAD_ERR_OK) {
             $errors[] = "Error uploading $fileName";
             continue;
         }
-        
+
         // Validate file type
         $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
         if (!in_array($fileType, $allowedTypes)) {
             $errors[] = "Invalid file type for $fileName";
             continue;
         }
-        
+
         // Validate file size (10MB max)
         if ($fileSize > 10 * 1024 * 1024) {
             $errors[] = "File too large: $fileName";
             continue;
         }
-        
+
         // Generate unique filename
         $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
         $uniqueFileName = uniqid('map_', true) . '.' . $fileExtension;
         $filePath = $uploadDir . $uniqueFileName;
-        
+
         if (move_uploaded_file($fileTmpName, $filePath)) {
             // Save to database
             $stmt = $conn->prepare("INSERT INTO floor_maps (original_name, file_name, file_path, file_type, file_size) VALUES (?, ?, ?, ?, ?)");
             $stmt->bind_param("ssssi", $fileName, $uniqueFileName, $filePath, $fileType, $fileSize);
-            
+
             if ($stmt->execute()) {
                 $uploadedFiles[] = [
                     'id' => $conn->insert_id,
@@ -769,22 +777,22 @@ function handleUploadMaps() {
             $errors[] = "Failed to move uploaded file: $fileName";
         }
     }
-    
+
     $response = [
         'success' => count($uploadedFiles) > 0,
         'uploaded_count' => count($uploadedFiles),
         'uploaded_files' => $uploadedFiles
     ];
-    
+
     if (!empty($errors)) {
         $response['errors'] = $errors;
-        $response['message'] = count($uploadedFiles) > 0 ? 
-            "Partial upload success. Some files failed." : 
+        $response['message'] = count($uploadedFiles) > 0 ?
+            "Partial upload success. Some files failed." :
             "Upload failed: " . implode(', ', $errors);
     } else {
         $response['message'] = "Successfully uploaded " . count($uploadedFiles) . " file(s)";
     }
-    
+
     echo json_encode($response);
 }
 
@@ -793,7 +801,7 @@ function handleUploadMaps() {
  */
 function handleGetRecentMaps() {
     global $conn;
-    
+
     $sql = "
         SELECT 
             m.id,
@@ -808,12 +816,12 @@ function handleGetRecentMaps() {
         ORDER BY m.uploaded_at DESC
         LIMIT 5
     ";
-    
+
     $result = $conn->query($sql);
     if (!$result) {
         throw new Exception("Query failed: " . $conn->error);
     }
-    
+
     $maps = [];
     while ($row = $result->fetch_assoc()) {
         $maps[] = [
@@ -826,7 +834,7 @@ function handleGetRecentMaps() {
             'uploaded_at' => $row['uploaded_at']
         ];
     }
-    
+
     echo json_encode(['success' => true, 'maps' => $maps]);
 }
 
@@ -835,7 +843,7 @@ function handleGetRecentMaps() {
  */
 function handleGetAllMaps() {
     global $conn;
-    
+
     $sql = "
         SELECT 
             m.id,
@@ -849,12 +857,12 @@ function handleGetAllMaps() {
         LEFT JOIN floors f ON m.floor_id = f.id
         ORDER BY m.uploaded_at DESC
     ";
-    
+
     $result = $conn->query($sql);
     if (!$result) {
         throw new Exception("Query failed: " . $conn->error);
     }
-    
+
     $maps = [];
     while ($row = $result->fetch_assoc()) {
         $maps[] = [
@@ -867,7 +875,7 @@ function handleGetAllMaps() {
             'uploaded_at' => $row['uploaded_at']
         ];
     }
-    
+
     echo json_encode(['success' => true, 'maps' => $maps]);
 }
 
@@ -876,42 +884,42 @@ function handleGetAllMaps() {
  */
 function handleViewMap() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Invalid map ID']);
         return;
     }
-    
+
     $stmt = $conn->prepare("SELECT original_name, file_path, file_type FROM floor_maps WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows === 0) {
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Map not found']);
         return;
     }
-    
+
     $map = $result->fetch_assoc();
     $stmt->close();
-    
+
     $filePath = $map['file_path'];
-    
+
     if (!file_exists($filePath)) {
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'File not found on server']);
         return;
     }
-    
+
     // Set appropriate headers
     header('Content-Type: ' . $map['file_type']);
     header('Content-Disposition: inline; filename="' . $map['original_name'] . '"');
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: public, max-age=3600');
-    
+
     readfile($filePath);
     exit();
 }
@@ -921,42 +929,42 @@ function handleViewMap() {
  */
 function handleDeleteMap() {
     global $conn;
-    
+
     $id = intval($_GET['id'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid map ID']);
         return;
     }
-    
+
     // Get file info
     $stmt = $conn->prepare("SELECT file_path FROM floor_maps WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows === 0) {
         echo json_encode(['success' => false, 'message' => 'Map not found']);
         return;
     }
-    
+
     $map = $result->fetch_assoc();
     $stmt->close();
-    
+
     // Delete from database
     $stmt = $conn->prepare("DELETE FROM floor_maps WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
+
     if ($stmt->execute()) {
         // Delete physical file
         if (file_exists($map['file_path'])) {
             unlink($map['file_path']);
         }
-        
+
         echo json_encode(['success' => true, 'message' => 'Map deleted successfully']);
     } else {
         throw new Exception("Failed to delete map: " . $stmt->error);
     }
-    
+
     $stmt->close();
 }
 
@@ -965,7 +973,7 @@ function handleDeleteMap() {
  */
 function handleExport() {
     global $conn;
-    
+
     try {
         $sql = "
             SELECT 
@@ -1020,28 +1028,28 @@ function handleExport() {
             
             ORDER BY floor_number, type, name
         ";
-        
+
         $result = $conn->query($sql);
         if (!$result) {
             throw new Exception("Query failed: " . $conn->error);
         }
-        
+
         // Set headers for CSV download
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="floors_offices_export_' . date('Y-m-d_H-i-s') . '.csv"');
         header('Pragma: no-cache');
         header('Expires: 0');
-        
+
         // Clear any previous output
         if (ob_get_level()) {
             ob_end_clean();
         }
-        
+
         $output = fopen('php://output', 'w');
-        
+
         // Add BOM for UTF-8
-        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-        
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
         // CSV Headers
         fputcsv($output, [
             'Type',
@@ -1055,7 +1063,7 @@ function handleExport() {
             'Export Date',
             'Export Time'
         ]);
-        
+
         // CSV Data
         while ($row = $result->fetch_assoc()) {
             fputcsv($output, [
@@ -1071,15 +1079,14 @@ function handleExport() {
                 date('H:i:s')
             ]);
         }
-        
+
         fclose($output);
         exit();
-        
     } catch (Exception $e) {
         // If export fails, return JSON error
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => false, 
+            'success' => false,
             'message' => 'Export failed: ' . $e->getMessage()
         ]);
         exit();
@@ -1091,9 +1098,9 @@ function handleExport() {
  */
 function handleGetStatistics() {
     global $conn;
-    
+
     $statistics = getOverallStatistics();
-    
+
     echo json_encode([
         'success' => true,
         'statistics' => $statistics
@@ -1105,18 +1112,18 @@ function handleGetStatistics() {
  */
 function getOverallStatistics() {
     global $conn;
-    
+
     $stats = [];
-    
+
     try {
         // Total floors
         $result = $conn->query("SELECT COUNT(*) as total FROM floors");
         $stats['total_floors'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Total offices
         $result = $conn->query("SELECT COUNT(*) as total FROM offices");
         $stats['total_offices'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Total visitors to all floors/offices
         $result = $conn->query("
             SELECT COUNT(*) as total 
@@ -1126,7 +1133,7 @@ function getOverallStatistics() {
             AND status IN ('checked_in', 'checked_out')
         ");
         $stats['total_visitors'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Today's visitors
         $result = $conn->query("
             SELECT COUNT(*) as total 
@@ -1137,15 +1144,15 @@ function getOverallStatistics() {
             AND status IN ('checked_in', 'checked_out')
         ");
         $stats['today_visitors'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Active floors
         $result = $conn->query("SELECT COUNT(*) as total FROM floors WHERE is_active = 1");
         $stats['active_floors'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Active offices
         $result = $conn->query("SELECT COUNT(*) as total FROM offices WHERE is_active = 1");
         $stats['active_offices'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
+
         // Floors with maps
         $result = $conn->query("
             SELECT COUNT(DISTINCT floor_id) as total 
@@ -1153,7 +1160,6 @@ function getOverallStatistics() {
             WHERE floor_id IS NOT NULL
         ");
         $stats['floors_with_maps'] = $result ? (int)$result->fetch_assoc()['total'] : 0;
-        
     } catch (Exception $e) {
         error_log("Error getting statistics: " . $e->getMessage());
         // Return default values if there's an error
@@ -1167,8 +1173,6 @@ function getOverallStatistics() {
             'floors_with_maps' => 0
         ];
     }
-    
+
     return $stats;
 }
-
-?>

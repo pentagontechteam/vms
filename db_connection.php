@@ -1,8 +1,8 @@
 <?php
 // db_connection.php
 $servername = "localhost";
-$username = "aatcabuj_admin"; 
-$password = "Sgt.pro@501";
+$username = "root";
+$password = "";
 $database = "aatcabuj_visitors_version_2";
 
 
@@ -13,4 +13,3 @@ $conn = new mysqli($servername, $username, $password, $database);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-?>

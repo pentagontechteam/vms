@@ -15,15 +15,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Database connection with error handling
-try {
-    $conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-    
-    if ($conn->connect_error) {
-        throw new Exception("Database connection failed: " . $conn->connect_error);
-    }
-} catch (Exception $e) {
-    die("Error: " . $e->getMessage());
-}
+require 'db_connection.php';
 
 // Check authentication EARLY
 if (!isset($_SESSION['cso_id'])) {
@@ -37,7 +29,7 @@ if (isset($_GET['sse'])) {
     header('Cache-Control: no-cache');
     header('Connection: keep-alive');
     header('Access-Control-Allow-Origin: *');
-    
+
     function sendNotification($message) {
         echo "data: " . json_encode($message) . "\n\n";
         ob_flush();
@@ -55,10 +47,10 @@ if (isset($_GET['sse'])) {
     }
 
     $last_check = isset($_GET['last_check']) ? intval($_GET['last_check']) : (time() - 60);
-    
+
     set_time_limit(30);
     $start_time = time();
-    
+
     while (time() - $start_time < 25) {
         $newRequests = checkNewRequests($conn, $last_check);
         if ($newRequests > 0) {
@@ -82,10 +74,10 @@ if (isset($_GET['ajax'])) {
     if (ob_get_level()) {
         ob_end_clean();
     }
-    
+
     if ($_GET['ajax'] == 'visitors') {
         header('Content-Type: text/html; charset=utf-8');
-        
+
         $pending_result = $conn->query("
             SELECT v.*, r.name as receptionist_name 
             FROM visitors v
@@ -93,7 +85,7 @@ if (isset($_GET['ajax'])) {
             WHERE v.status='pending' 
             ORDER BY v.created_at DESC, v.time_of_visit DESC
         ");
-        
+
         if ($pending_result && $pending_result->num_rows > 0) {
             while ($row = $pending_result->fetch_assoc()) {
                 echo '<div class="visitor-item">';
@@ -141,20 +133,20 @@ if (isset($_GET['ajax'])) {
         $conn->close();
         exit();
     }
-    
+
     // AJAX endpoint for guest history
     if ($_GET['ajax'] == 'history') {
         header('Content-Type: application/json');
-        
+
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
         $limit = 20;
         $offset = ($page - 1) * $limit;
-        
+
         $debug_mode = isset($_GET['debug']) && $_GET['debug'] == '1';
-        
+
         error_log("History Debug - Search: '$search', Page: $page, Debug Mode: " . ($debug_mode ? 'ON' : 'OFF'));
-        
+
         // Check what data exists in the visitors table
         $debug_query = "SELECT status, COUNT(*) as count FROM visitors GROUP BY status";
         $debug_result = $conn->query($debug_query);
@@ -164,7 +156,7 @@ if (isset($_GET['ajax'])) {
                 $status_counts[$row['status']] = $row['count'];
             }
         }
-        
+
         // Check available columns
         $columns_query = "SHOW COLUMNS FROM visitors";
         $columns_result = $conn->query($columns_query);
@@ -174,15 +166,15 @@ if (isset($_GET['ajax'])) {
                 $available_columns[] = $row['Field'];
             }
         }
-        
+
         error_log("History Debug - Available columns: " . implode(', ', $available_columns));
         error_log("History Debug - Status counts: " . json_encode($status_counts));
-        
+
         // Build search conditions
         $search_conditions = [];
         $search_params = [];
         $param_types = '';
-        
+
         if (!empty($search)) {
             $search_conditions[] = "(v.name LIKE ? OR v.phone LIKE ? OR COALESCE(v.email, '') LIKE ? OR COALESCE(v.host_name, '') LIKE ? OR COALESCE(v.organization, '') LIKE ? OR COALESCE(v.reason, '') LIKE ?)";
             $search_term = "%$search%";
@@ -191,29 +183,29 @@ if (isset($_GET['ajax'])) {
                 $param_types .= 's';
             }
         }
-        
+
         // NEW APPROACH: Show visitors who have been approved at some point
         if ($debug_mode) {
             $where_clause = empty($search_conditions) ? "WHERE 1=1" : "WHERE " . implode(' AND ', $search_conditions);
         } else {
             if (in_array('approved_at', $available_columns)) {
-                $where_clause = empty($search_conditions) ? 
-                    "WHERE v.approved_at IS NOT NULL" : 
+                $where_clause = empty($search_conditions) ?
+                    "WHERE v.approved_at IS NOT NULL" :
                     "WHERE v.approved_at IS NOT NULL AND " . implode(' AND ', $search_conditions);
             } else {
                 $approval_condition = "(v.status='approved' OR v.check_in_time IS NOT NULL)";
-                $where_clause = empty($search_conditions) ? 
-                    "WHERE $approval_condition" : 
+                $where_clause = empty($search_conditions) ?
+                    "WHERE $approval_condition" :
                     "WHERE $approval_condition AND " . implode(' AND ', $search_conditions);
             }
         }
-        
+
         error_log("History Debug - Where clause: $where_clause");
-        
+
         // Get total count for pagination
         $count_query = "SELECT COUNT(*) as total FROM visitors v $where_clause";
         $total_records = 0;
-        
+
         try {
             if (!empty($search_params)) {
                 $count_stmt = $conn->prepare($count_query);
@@ -235,9 +227,9 @@ if (isset($_GET['ajax'])) {
         } catch (Exception $e) {
             error_log("History count query error: " . $e->getMessage());
         }
-        
+
         error_log("History Debug - Total records found: $total_records");
-        
+
         // Build the SELECT clause based on available columns
         $select_fields = "v.*, ";
         if (in_array('approved_at', $available_columns)) {
@@ -247,11 +239,11 @@ if (isset($_GET['ajax'])) {
         }
         $select_fields .= "COALESCE(v.check_in_time, '') as check_in_time, ";
         $select_fields .= "COALESCE(v.check_out_time, '') as check_out_time";
-        
-        $order_clause = in_array('approved_at', $available_columns) ? 
+
+        $order_clause = in_array('approved_at', $available_columns) ?
             "ORDER BY v.approved_at DESC, v.created_at DESC, v.id DESC" :
             "ORDER BY v.created_at DESC, v.id DESC";
-        
+
         $query = "
             SELECT $select_fields,
                    COALESCE(r.name, 'System') as receptionist_name
@@ -261,11 +253,11 @@ if (isset($_GET['ajax'])) {
             $order_clause
             LIMIT ? OFFSET ?
         ";
-        
+
         error_log("History Debug - Main query: " . str_replace(["\n", "  "], [" ", " "], $query));
-        
+
         $guests = [];
-        
+
         try {
             $stmt = $conn->prepare($query);
             if ($stmt) {
@@ -277,10 +269,10 @@ if (isset($_GET['ajax'])) {
                 } else {
                     $stmt->bind_param('ii', $limit, $offset);
                 }
-                
+
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
+
                 if ($result) {
                     while ($row = $result->fetch_assoc()) {
                         $guests[] = $row;
@@ -293,9 +285,9 @@ if (isset($_GET['ajax'])) {
         } catch (Exception $e) {
             error_log("History main query error: " . $e->getMessage());
         }
-        
+
         error_log("History Debug - Guests found: " . count($guests));
-        
+
         $response = [
             'guests' => $guests,
             'total' => $total_records,
@@ -313,22 +305,22 @@ if (isset($_GET['ajax'])) {
                 'approach' => 'Shows visitors who have EVER been approved, regardless of current status'
             ]
         ];
-        
+
         echo json_encode($response);
         $conn->close();
         exit();
     }
-    
+
     if ($_GET['ajax'] == 'stats') {
         header('Content-Type: application/json');
         echo json_encode(fetchStatistics($conn));
         $conn->close();
         exit();
     }
-    
+
     if ($_GET['ajax'] == 'hosting_trends') {
         error_log("DEBUG: Fetching hosting trends data");
-        
+
         $result = $conn->query("
             SELECT 
                 host_name,
@@ -342,23 +334,23 @@ if (isset($_GET['ajax'])) {
             ORDER BY total_visitors DESC
             LIMIT 10
         ");
-        
+
         if (!$result) {
             error_log("DEBUG: Query failed - " . $conn->error);
             die(json_encode(["error" => $conn->error]));
         }
-        
+
         $data = [];
         while ($row = $result->fetch_assoc()) {
             $data[] = $row;
         }
-        
+
         error_log("DEBUG: Returned " . count($data) . " records");
         header('Content-Type: application/json');
         echo json_encode($data);
         exit();
     }
-    
+
     if ($_GET['ajax'] == 'traffic_heatmap') {
         $result = $conn->query("
             SELECT 
@@ -370,7 +362,7 @@ if (isset($_GET['ajax'])) {
             GROUP BY HOUR(check_in_time), floor_of_visit
             ORDER BY hour, floor_of_visit
         ");
-        
+
         $data = [];
         if ($result) {
             while ($row = $result->fetch_assoc()) {
@@ -401,17 +393,17 @@ function fetchStatistics($conn) {
     $today = date('Y-m-d');
     $week_start = date('Y-m-d', strtotime('monday this week'));
     $week_end = date('Y-m-d', strtotime('sunday this week'));
-    
+
     $result = $conn->query("SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = '$today'");
     if ($result) {
         $stats['total_today'] = $result->fetch_assoc()['count'] ?? 0;
     }
-    
+
     $result = $conn->query("SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = '$today' AND status='approved'");
     if ($result) {
         $stats['approved_today'] = $result->fetch_assoc()['count'] ?? 0;
     }
-    
+
     $result = $conn->query("SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = '$today' AND status='denied'");
     if ($result) {
         $stats['denied_today'] = $result->fetch_assoc()['count'] ?? 0;
@@ -440,7 +432,7 @@ function fetchStatistics($conn) {
             $stats['top_hosts'][] = $row;
         }
     }
-    
+
     $weekly_result = $conn->query("
         SELECT DAYNAME(created_at) as day, COUNT(*) as count 
         FROM visitors 
@@ -448,7 +440,7 @@ function fetchStatistics($conn) {
         GROUP BY DAYOFWEEK(created_at), DAYNAME(created_at)
         ORDER BY DAYOFWEEK(created_at)
     ");
-    
+
     $days = ['Monday' => 0, 'Tuesday' => 0, 'Wednesday' => 0, 'Thursday' => 0, 'Friday' => 0, 'Saturday' => 0, 'Sunday' => 0];
     if ($weekly_result) {
         while ($row = $weekly_result->fetch_assoc()) {
@@ -456,10 +448,10 @@ function fetchStatistics($conn) {
         }
     }
     $stats['weekly_data'] = array_values($days);
-    
+
     $last_week_start = date('Y-m-d', strtotime('monday last week'));
     $last_week_end = date('Y-m-d', strtotime('sunday last week'));
-    
+
     $last_weekly_result = $conn->query("
         SELECT DAYNAME(created_at) as day, COUNT(*) as count 
         FROM visitors 
@@ -467,7 +459,7 @@ function fetchStatistics($conn) {
         GROUP BY DAYOFWEEK(created_at), DAYNAME(created_at)
         ORDER BY DAYOFWEEK(created_at)
     ");
-    
+
     $last_days = ['Monday' => 0, 'Tuesday' => 0, 'Wednesday' => 0, 'Thursday' => 0, 'Friday' => 0, 'Saturday' => 0, 'Sunday' => 0];
     if ($last_weekly_result) {
         while ($row = $last_weekly_result->fetch_assoc()) {
@@ -475,10 +467,10 @@ function fetchStatistics($conn) {
         }
     }
     $stats['last_weekly_data'] = array_values($last_days);
-    
+
     $total_processed = $stats['approved_today'] + $stats['denied_today'];
     $stats['approval_rate'] = $total_processed > 0 ? round(($stats['approved_today'] / $total_processed) * 100, 2) : 0;
-    
+
     $result = $conn->query("SELECT COUNT(*) as count FROM visitors WHERE status='approved'");
     if ($result) {
         $stats['total_visitors'] = $result->fetch_assoc()['count'] ?? 0;
@@ -498,6 +490,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -685,12 +678,12 @@ $conn->close();
             background-color: #ffc107;
             color: #212529;
         }
-        
+
         .logout-btn {
             color: var(--dark-green);
             border: 1px solid var(--dark-green);
         }
-        
+
         .logout-btn:hover {
             background-color: var(--dark-green);
             color: white;
@@ -711,11 +704,11 @@ $conn->close();
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(7, 175, 139, 0.4);
         }
-        
+
         .tab-content {
             padding-top: 1.5rem;
         }
-        
+
         .chart-title {
             font-size: 1.1rem;
             font-weight: 600;
@@ -723,13 +716,13 @@ $conn->close();
             margin-bottom: 1rem;
             text-align: center;
         }
-        
+
         .stat-card-icon {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
             color: var(--primary-color);
         }
-        
+
         .toast {
             max-width: 350px;
             overflow: hidden;
@@ -766,7 +759,7 @@ $conn->close();
         .history-container {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
             overflow: hidden;
         }
 
@@ -792,7 +785,7 @@ $conn->close();
             margin-top: 1rem;
         }
 
-       .search-input {
+        .search-input {
             width: 100%;
             padding: 12px 16px 12px 48px;
             border: 2px solid var(--google-border);
@@ -1013,8 +1006,13 @@ $conn->close();
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .empty-history {
@@ -1045,21 +1043,21 @@ $conn->close();
             .history-header {
                 padding: 1rem;
             }
-            
+
             .guest-card {
                 padding: 1rem;
             }
-            
+
             .approval-time {
                 position: static;
                 margin-top: 0.5rem;
                 text-align: left;
             }
-            
+
             .guest-meta {
                 grid-template-columns: 1fr;
             }
-            
+
             .pagination-container {
                 padding: 1rem;
                 flex-direction: column;
@@ -1073,7 +1071,7 @@ $conn->close();
             padding: 1px 2px;
             border-radius: 2px;
         }
-        
+
         .overview-btn {
             background: linear-gradient(135deg, var(--accent-color), #e6b800);
             color: #000;
@@ -1093,398 +1091,398 @@ $conn->close();
 </head>
 
 <body>
-<div class="refresh-indicator" id="refreshIndicator">
-    <i class="fas fa-sync-alt fa-spin me-1"></i> Refreshing...
-</div>
-
-<div class="container py-4">
-    <div class="d-flex justify-content-between mb-3">
-        <ul class="nav nav-tabs">
-            <li class="nav-item">
-                <a class="nav-link <?php echo $active_tab == 'approvals' ? 'active' : ''; ?>" href="?tab=approvals">Approvals</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?php echo $active_tab == 'history' ? 'active' : ''; ?>" href="?tab=history">Guest History</a>
-            </li>
-        </ul>
-        <div class="d-flex gap-2">
-            <a href="smanalytics.php" class="btn analytics-btn btn-sm" id="analyticsBtn">
-                <i class="fas fa-chart-bar me-1"></i> Analytics
-            </a>
-            <a href="smoverview.php" class="btn overview-btn btn-sm">
-                <i class="fas fa-building me-1"></i> Premises Overview
-            </a>
-            <a href="cso_logout.php" class="btn logout-btn btn-sm">
-                <i class="fas fa-sign-out-alt me-1"></i> Logout
-            </a>
-        </div>
+    <div class="refresh-indicator" id="refreshIndicator">
+        <i class="fas fa-sync-alt fa-spin me-1"></i> Refreshing...
     </div>
 
-    <div class="tab-content">
-        <?php if ($active_tab == 'approvals'): ?>
-            <div class="row mb-4" id="stats-container">
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="value" id="total-today"><?php echo $stats['total_today']; ?></div>
-                        <div class="label">Visitors Today</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-card-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="value" id="pending-count"><?php echo $stats['pending_count']; ?></div>
-                        <div class="label">Pending Approvals</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-card-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="value" id="approved-today"><?php echo $stats['approved_today']; ?></div>
-                        <div class="label">Approved Today</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-card-icon">
-                            <i class="fas fa-times-circle"></i>
-                        </div>
-                        <div class="value" id="denied-today"><?php echo $stats['denied_today']; ?></div>
-                        <div class="label">Denied Today</div>
-                    </div>
-                </div>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between mb-3">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link <?php echo $active_tab == 'approvals' ? 'active' : ''; ?>" href="?tab=approvals">Approvals</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo $active_tab == 'history' ? 'active' : ''; ?>" href="?tab=history">Guest History</a>
+                </li>
+            </ul>
+            <div class="d-flex gap-2">
+                <a href="smanalytics.php" class="btn analytics-btn btn-sm" id="analyticsBtn">
+                    <i class="fas fa-chart-bar me-1"></i> Analytics
+                </a>
+                <a href="smoverview.php" class="btn overview-btn btn-sm">
+                    <i class="fas fa-building me-1"></i> Premises Overview
+                </a>
+                <a href="cso_logout.php" class="btn logout-btn btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
             </div>
+        </div>
 
-            <div class="visitor-list mt-4">
-                <div class="header-bar">
-                    <h1>
-                        Visitor Approvals
-                        <span class="badge bg-primary ms-2" id="pending-badge"><?php echo $stats['pending_count']; ?> Pending</span>
-                    </h1>
-                    <button onclick="refreshAll()" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                    </button>
+        <div class="tab-content">
+            <?php if ($active_tab == 'approvals'): ?>
+                <div class="row mb-4" id="stats-container">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="value" id="total-today"><?php echo $stats['total_today']; ?></div>
+                            <div class="label">Visitors Today</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="value" id="pending-count"><?php echo $stats['pending_count']; ?></div>
+                            <div class="label">Pending Approvals</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="value" id="approved-today"><?php echo $stats['approved_today']; ?></div>
+                            <div class="label">Approved Today</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="value" id="denied-today"><?php echo $stats['denied_today']; ?></div>
+                            <div class="label">Denied Today</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="visitor-container">
-                    <?php 
-                    $conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-                    $pending_result = $conn->query("
+                <div class="visitor-list mt-4">
+                    <div class="header-bar">
+                        <h1>
+                            Visitor Approvals
+                            <span class="badge bg-primary ms-2" id="pending-badge"><?php echo $stats['pending_count']; ?> Pending</span>
+                        </h1>
+                        <button onclick="refreshAll()" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div id="visitor-container">
+                        <?php
+                        include 'db_connection.php';
+
+                        $pending_result = $conn->query("
                         SELECT v.*, r.name as receptionist_name 
                         FROM visitors v
                         LEFT JOIN receptionists r ON v.receptionist_id = r.id
                         WHERE v.status='pending' 
                         ORDER BY v.created_at DESC, v.time_of_visit DESC
                     ");
-                    if ($pending_result && $pending_result->num_rows > 0): 
-                        while ($row = $pending_result->fetch_assoc()): ?>
-                            <div class="visitor-item">
-                                <div class="visitor-info">
-                                    <h5><?php echo htmlspecialchars($row['name']); ?></h5>
-                                    <span class="badge bg-warning text-dark mb-1">Pending</span>
-                                    <small><i class="fas fa-phone me-1"></i> <?php echo htmlspecialchars($row['phone']); ?></small>
-                                    <?php if (!empty($row['email'])): ?>
-                                        <small><i class="fas fa-envelope me-1"></i> <?php echo htmlspecialchars($row['email']); ?></small>
-                                    <?php endif; ?>
-                                    <small><i class="fas fa-user-shield me-1"></i> Visiting: <?php echo htmlspecialchars($row['host_name']); ?></small>
-                                    <?php if (!empty($row['time_of_visit'])): ?>
-                                        <small><i class="fas fa-calendar-day me-1"></i> <?php echo date('M j, Y g:i A', strtotime($row['time_of_visit'])); ?></small>
-                                    <?php endif; ?>
-                                    <?php if (!empty($row['organization'])): ?>
-                                        <small><i class="fas fa-building me-1"></i> Organization: <?php echo htmlspecialchars($row['organization']); ?></small>
-                                    <?php endif; ?>
-                                    <?php if (!empty($row['reason'])): ?>
-                                        <small><i class="fas fa-info-circle me-1"></i> Reason: <?php echo htmlspecialchars($row['reason']); ?></small>
-                                    <?php endif; ?>
-                                    <?php if (!empty($row['floor_of_visit'])): ?>
-                                        <small><i class="fas fa-map-marker-alt me-1"></i> Floor: <?php echo htmlspecialchars($row['floor_of_visit']); ?></small>
-                                    <?php endif; ?>
-                                    <?php if (!empty($row['receptionist_name'])): ?>
-                                        <small><i class="fas fa-user-tie me-1"></i> Registered by: <?php echo htmlspecialchars($row['receptionist_name']); ?></small>
-                                    <?php endif; ?>
+                        if ($pending_result && $pending_result->num_rows > 0):
+                            while ($row = $pending_result->fetch_assoc()): ?>
+                                <div class="visitor-item">
+                                    <div class="visitor-info">
+                                        <h5><?php echo htmlspecialchars($row['name']); ?></h5>
+                                        <span class="badge bg-warning text-dark mb-1">Pending</span>
+                                        <small><i class="fas fa-phone me-1"></i> <?php echo htmlspecialchars($row['phone']); ?></small>
+                                        <?php if (!empty($row['email'])): ?>
+                                            <small><i class="fas fa-envelope me-1"></i> <?php echo htmlspecialchars($row['email']); ?></small>
+                                        <?php endif; ?>
+                                        <small><i class="fas fa-user-shield me-1"></i> Visiting: <?php echo htmlspecialchars($row['host_name']); ?></small>
+                                        <?php if (!empty($row['time_of_visit'])): ?>
+                                            <small><i class="fas fa-calendar-day me-1"></i> <?php echo date('M j, Y g:i A', strtotime($row['time_of_visit'])); ?></small>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['organization'])): ?>
+                                            <small><i class="fas fa-building me-1"></i> Organization: <?php echo htmlspecialchars($row['organization']); ?></small>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['reason'])): ?>
+                                            <small><i class="fas fa-info-circle me-1"></i> Reason: <?php echo htmlspecialchars($row['reason']); ?></small>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['floor_of_visit'])): ?>
+                                            <small><i class="fas fa-map-marker-alt me-1"></i> Floor: <?php echo htmlspecialchars($row['floor_of_visit']); ?></small>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['receptionist_name'])): ?>
+                                            <small><i class="fas fa-user-tie me-1"></i> Registered by: <?php echo htmlspecialchars($row['receptionist_name']); ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <a href="approve.php?id=<?php echo $row['id']; ?>" class="btn btn-success btn-sm">
+                                            <i class="fas fa-check me-1"></i> Approve
+                                        </a>
+                                        <a href="deny.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-times me-1"></i> Deny
+                                        </a>
+                                    </div>
                                 </div>
-                                <div class="action-buttons">
-                                    <a href="approve.php?id=<?php echo $row['id']; ?>" class="btn btn-success btn-sm">
-                                        <i class="fas fa-check me-1"></i> Approve
-                                    </a>
-                                    <a href="deny.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-times me-1"></i> Deny
-                                    </a>
-                                </div>
+                            <?php endwhile;
+                            $conn->close();
+                        else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-user-check fa-4x mb-3"></i>
+                                <h4>No pending approvals</h4>
+                                <p>All visitor requests have been processed</p>
                             </div>
-                        <?php endwhile; 
-                        $conn->close();
-                    else: ?>
-                        <div class="empty-state">
-                            <i class="fas fa-user-check fa-4x mb-3"></i>
-                            <h4>No pending approvals</h4>
-                            <p>All visitor requests have been processed</p>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
 
-        <?php elseif ($active_tab == 'history'): ?>
-            <div class="history-container">
-                <div class="history-header">
-                    <h2 class="history-title">
-                        <i class="fas fa-history"></i>
-                        Guest History
-                        <small class="text-muted ms-2" style="font-size: 0.7em;">Shows all guests who have been approved</small>
-                    </h2>
-                    <div class="search-container">
-                        <i class="fas fa-search search-icon"></i>
-                        <input 
-                            type="text" 
-                            class="search-input" 
-                            placeholder="Search guests by name, phone, email, host, organization..."
-                            id="historySearch"
-                        >
-                        <button class="clear-search" id="clearSearch">
-                            <i class="fas fa-times"></i>
-                        </button>
+            <?php elseif ($active_tab == 'history'): ?>
+                <div class="history-container">
+                    <div class="history-header">
+                        <h2 class="history-title">
+                            <i class="fas fa-history"></i>
+                            Guest History
+                            <small class="text-muted ms-2" style="font-size: 0.7em;">Shows all guests who have been approved</small>
+                        </h2>
+                        <div class="search-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input
+                                type="text"
+                                class="search-input"
+                                placeholder="Search guests by name, phone, email, host, organization..."
+                                id="historySearch">
+                            <button class="clear-search" id="clearSearch">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="fetchGuestHistory(1, '', false)">
+                                <i class="fas fa-user-check me-1"></i> Guest History
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="fetchGuestHistory(1, '', true)">
+                                <i class="fas fa-bug me-1"></i> Debug Mode (All Records)
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="showDebugInfo()">
+                                <i class="fas fa-info-circle me-1"></i> Show Debug Info
+                            </button>
+                        </div>
+                        <div class="alert alert-info mt-3" style="font-size: 0.9em;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> This shows all guests who have been approved at some point, even if their status was later changed.
+                            The history preserves a permanent record of approved visitors.
+                        </div>
                     </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary me-2" onclick="fetchGuestHistory(1, '', false)">
-                            <i class="fas fa-user-check me-1"></i> Guest History
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="fetchGuestHistory(1, '', true)">
-                            <i class="fas fa-bug me-1"></i> Debug Mode (All Records)
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="showDebugInfo()">
-                            <i class="fas fa-info-circle me-1"></i> Show Debug Info
-                        </button>
-                    </div>
-                    <div class="alert alert-info mt-3" style="font-size: 0.9em;">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Note:</strong> This shows all guests who have been approved at some point, even if their status was later changed. 
-                        The history preserves a permanent record of approved visitors.
-                    </div>
-                </div>
-                
-                <div class="history-content">
-                    <div id="historyContainer">
-                        <div class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading guest history...</p>
+
+                    <div class="history-content">
+                        <div id="historyContainer">
+                            <div class="loading-state">
+                                <div class="loading-spinner"></div>
+                                <p>Loading guest history...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
-</div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-// Real-time refresh functionality - FIXED VERSION
-let refreshInterval = 8000;
-let visitorRefreshTimeout;
-let statsRefreshTimeout;
-let eventSource = null;
-let lastRefresh = Date.now();
-let isRefreshing = false;
+    <script>
+        // Real-time refresh functionality - FIXED VERSION
+        let refreshInterval = 8000;
+        let visitorRefreshTimeout;
+        let statsRefreshTimeout;
+        let eventSource = null;
+        let lastRefresh = Date.now();
+        let isRefreshing = false;
 
-// Guest History functionality
-let currentPage = 1;
-let searchTimeout;
-let currentSearch = '';
+        // Guest History functionality
+        let currentPage = 1;
+        let searchTimeout;
+        let currentSearch = '';
 
-// Show refresh indicator
-function showRefreshIndicator() {
-    const indicator = document.getElementById('refreshIndicator');
-    if (indicator) {
-        indicator.classList.add('show');
-    }
-}
-
-// Hide refresh indicator
-function hideRefreshIndicator() {
-    const indicator = document.getElementById('refreshIndicator');
-    if (indicator) {
-        indicator.classList.remove('show');
-    }
-}
-
-function fetchVisitorList() {
-    if (isRefreshing) return;
-    
-    isRefreshing = true;
-    showRefreshIndicator();
-    
-    console.log('Fetching visitor list...');
-    
-    fetch('?ajax=visitors&tab=approvals&t=' + Date.now(), {
-        method: 'GET',
-        headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.text();
-    })
-    .then(data => {
-        const container = document.getElementById('visitor-container');
-        if (container) {
-            container.innerHTML = data;
-        }
-        console.log('Visitor list updated successfully');
-        lastRefresh = Date.now();
-        hideRefreshIndicator();
-        isRefreshing = false;
-        
-        // Schedule next refresh
-        if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
-        visitorRefreshTimeout = setTimeout(fetchVisitorList, refreshInterval);
-    })
-    .catch(error => {
-        console.error('Error fetching visitors:', error);
-        hideRefreshIndicator();
-        isRefreshing = false;
-        
-        // Retry after a longer interval on error
-        if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
-        visitorRefreshTimeout = setTimeout(fetchVisitorList, refreshInterval * 2);
-    });
-}
-
-function fetchStats() {
-    console.log('Fetching stats...');
-    
-    fetch('?ajax=stats&tab=approvals&t=' + Date.now(), {
-        method: 'GET',
-        headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Update stat cards
-        const elements = {
-            'total-today': data.total_today,
-            'pending-count': data.pending_count,
-            'approved-today': data.approved_today,
-            'denied-today': data.denied_today
-        };
-        
-        Object.keys(elements).forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = elements[id];
+        // Show refresh indicator
+        function showRefreshIndicator() {
+            const indicator = document.getElementById('refreshIndicator');
+            if (indicator) {
+                indicator.classList.add('show');
             }
-        });
-        
-        // Update pending badge
-        const pendingBadge = document.getElementById('pending-badge');
-        if (pendingBadge) {
-            pendingBadge.textContent = data.pending_count + ' Pending';
         }
-        
-        console.log('Stats updated successfully');
-        
-        // Schedule next stats refresh
-        if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
-        statsRefreshTimeout = setTimeout(fetchStats, refreshInterval);
-    })
-    .catch(error => {
-        console.error('Error fetching stats:', error);
-        
-        // Retry after a longer interval on error
-        if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
-        statsRefreshTimeout = setTimeout(fetchStats, refreshInterval * 2);
-    });
-}
 
-function refreshAll() {
-    console.log('Manual refresh triggered');
-    
-    // Clear existing timeouts
-    if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
-    if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
-    
-    // Close existing EventSource
-    if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-    }
-    
-    // Force immediate refresh
-    isRefreshing = false;
-    fetchVisitorList();
-    fetchStats();
-    
-    // Restart SSE connection
-    setTimeout(setupEventSource, 1000);
-}
+        // Hide refresh indicator
+        function hideRefreshIndicator() {
+            const indicator = document.getElementById('refreshIndicator');
+            if (indicator) {
+                indicator.classList.remove('show');
+            }
+        }
 
-// Guest History Functions
-function fetchGuestHistory(page = 1, search = '', debugMode = false) {
-    const container = document.getElementById('historyContainer');
-    if (!container) {
-        console.error('History container not found');
-        return;
-    }
-    
-    console.log(`Fetching guest history - Page: ${page}, Search: "${search}", Debug: ${debugMode}`);
-    
-    // Show loading state
-    container.innerHTML = `
+        function fetchVisitorList() {
+            if (isRefreshing) return;
+
+            isRefreshing = true;
+            showRefreshIndicator();
+
+            console.log('Fetching visitor list...');
+
+            fetch('?ajax=visitors&tab=approvals&t=' + Date.now(), {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const container = document.getElementById('visitor-container');
+                    if (container) {
+                        container.innerHTML = data;
+                    }
+                    console.log('Visitor list updated successfully');
+                    lastRefresh = Date.now();
+                    hideRefreshIndicator();
+                    isRefreshing = false;
+
+                    // Schedule next refresh
+                    if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
+                    visitorRefreshTimeout = setTimeout(fetchVisitorList, refreshInterval);
+                })
+                .catch(error => {
+                    console.error('Error fetching visitors:', error);
+                    hideRefreshIndicator();
+                    isRefreshing = false;
+
+                    // Retry after a longer interval on error
+                    if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
+                    visitorRefreshTimeout = setTimeout(fetchVisitorList, refreshInterval * 2);
+                });
+        }
+
+        function fetchStats() {
+            console.log('Fetching stats...');
+
+            fetch('?ajax=stats&tab=approvals&t=' + Date.now(), {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update stat cards
+                    const elements = {
+                        'total-today': data.total_today,
+                        'pending-count': data.pending_count,
+                        'approved-today': data.approved_today,
+                        'denied-today': data.denied_today
+                    };
+
+                    Object.keys(elements).forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.textContent = elements[id];
+                        }
+                    });
+
+                    // Update pending badge
+                    const pendingBadge = document.getElementById('pending-badge');
+                    if (pendingBadge) {
+                        pendingBadge.textContent = data.pending_count + ' Pending';
+                    }
+
+                    console.log('Stats updated successfully');
+
+                    // Schedule next stats refresh
+                    if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
+                    statsRefreshTimeout = setTimeout(fetchStats, refreshInterval);
+                })
+                .catch(error => {
+                    console.error('Error fetching stats:', error);
+
+                    // Retry after a longer interval on error
+                    if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
+                    statsRefreshTimeout = setTimeout(fetchStats, refreshInterval * 2);
+                });
+        }
+
+        function refreshAll() {
+            console.log('Manual refresh triggered');
+
+            // Clear existing timeouts
+            if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
+            if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
+
+            // Close existing EventSource
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            // Force immediate refresh
+            isRefreshing = false;
+            fetchVisitorList();
+            fetchStats();
+
+            // Restart SSE connection
+            setTimeout(setupEventSource, 1000);
+        }
+
+        // Guest History Functions
+        function fetchGuestHistory(page = 1, search = '', debugMode = false) {
+            const container = document.getElementById('historyContainer');
+            if (!container) {
+                console.error('History container not found');
+                return;
+            }
+
+            console.log(`Fetching guest history - Page: ${page}, Search: "${search}", Debug: ${debugMode}`);
+
+            // Show loading state
+            container.innerHTML = `
         <div class="loading-state">
             <div class="loading-spinner"></div>
             <p>Loading guest history...</p>
         </div>
     `;
-    
-    const url = `?ajax=history&page=${page}&search=${encodeURIComponent(search)}&debug=${debugMode ? '1' : '0'}&t=${Date.now()}`;
-    console.log('Fetching URL:', url);
-    
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-        }
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text(); // Get as text first to debug
-    })
-    .then(text => {
-        console.log('Raw response length:', text.length);
-        console.log('Raw response preview:', text.substring(0, 1000));
-        try {
-            const data = JSON.parse(text);
-            console.log('Parsed data:', data);
-            
-            // Store debug mode state
-            window.currentDebugMode = debugMode;
-            
-            displayGuestHistory(data);
-        } catch (e) {
-            console.error('JSON parse error:', e);
-            console.error('Full response text:', text);
-            container.innerHTML = `
+
+            const url = `?ajax=history&page=${page}&search=${encodeURIComponent(search)}&debug=${debugMode ? '1' : '0'}&t=${Date.now()}`;
+            console.log('Fetching URL:', url);
+
+            fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text(); // Get as text first to debug
+                })
+                .then(text => {
+                    console.log('Raw response length:', text.length);
+                    console.log('Raw response preview:', text.substring(0, 1000));
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+
+                        // Store debug mode state
+                        window.currentDebugMode = debugMode;
+
+                        displayGuestHistory(data);
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                        console.error('Full response text:', text);
+                        container.innerHTML = `
                 <div class="empty-history">
                     <div class="empty-history-icon">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -1497,11 +1495,11 @@ function fetchGuestHistory(page = 1, search = '', debugMode = false) {
                     </details>
                 </div>
             `;
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching guest history:', error);
-        container.innerHTML = `
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching guest history:', error);
+                    container.innerHTML = `
             <div class="empty-history">
                 <div class="empty-history-icon">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -1513,22 +1511,22 @@ function fetchGuestHistory(page = 1, search = '', debugMode = false) {
                 </button>
             </div>
         `;
-    });
-}
+                });
+        }
 
-function showDebugInfo() {
-    const container = document.getElementById('historyContainer');
-    container.innerHTML = `
+        function showDebugInfo() {
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = `
         <div class="loading-state">
             <div class="loading-spinner"></div>
             <p>Fetching debug information...</p>
         </div>
     `;
-    
-    fetch('?ajax=history&debug=1&page=1&t=' + Date.now())
-        .then(response => response.json())
-        .then(data => {
-            let debugHtml = `
+
+            fetch('?ajax=history&debug=1&page=1&t=' + Date.now())
+                .then(response => response.json())
+                .then(data => {
+                    let debugHtml = `
                 <div class="debug-info p-4">
                     <h4>Database Debug Information</h4>
                     <div class="row">
@@ -1536,30 +1534,30 @@ function showDebugInfo() {
                             <h5>Visitor Status Counts:</h5>
                             <ul>
             `;
-            
-            if (data.debug && data.debug.status_counts) {
-                Object.keys(data.debug.status_counts).forEach(status => {
-                    debugHtml += `<li><strong>${status}:</strong> ${data.debug.status_counts[status]} records</li>`;
-                });
-            } else {
-                debugHtml += '<li>No status count data available</li>';
-            }
-            
-            debugHtml += `
+
+                    if (data.debug && data.debug.status_counts) {
+                        Object.keys(data.debug.status_counts).forEach(status => {
+                            debugHtml += `<li><strong>${status}:</strong> ${data.debug.status_counts[status]} records</li>`;
+                        });
+                    } else {
+                        debugHtml += '<li>No status count data available</li>';
+                    }
+
+                    debugHtml += `
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <h5>Available Columns:</h5>
                             <ul>
             `;
-            
-            if (data.debug && data.debug.available_columns) {
-                data.debug.available_columns.forEach(column => {
-                    debugHtml += `<li>${column}</li>`;
-                });
-            }
-            
-            debugHtml += `
+
+                    if (data.debug && data.debug.available_columns) {
+                        data.debug.available_columns.forEach(column => {
+                            debugHtml += `<li>${column}</li>`;
+                        });
+                    }
+
+                    debugHtml += `
                             </ul>
                         </div>
                     </div>
@@ -1582,27 +1580,27 @@ function showDebugInfo() {
                     </div>
                 </div>
             `;
-            
-            container.innerHTML = debugHtml;
-        })
-        .catch(error => {
-            container.innerHTML = `
+
+                    container.innerHTML = debugHtml;
+                })
+                .catch(error => {
+                    container.innerHTML = `
                 <div class="empty-history">
                     <h3>Debug Error</h3>
                     <p>Could not fetch debug information: ${error.message}</p>
                 </div>
             `;
-        });
-}
+                });
+        }
 
-function displayGuestHistory(data) {
-    const container = document.getElementById('historyContainer');
-    
-    console.log('Displaying guest history:', data);
-    
-    // Check for errors in response
-    if (data.error) {
-        container.innerHTML = `
+        function displayGuestHistory(data) {
+            const container = document.getElementById('historyContainer');
+
+            console.log('Displaying guest history:', data);
+
+            // Check for errors in response
+            if (data.error) {
+                container.innerHTML = `
             <div class="empty-history">
                 <div class="empty-history-icon">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -1611,38 +1609,38 @@ function displayGuestHistory(data) {
                 <p>${data.error}</p>
             </div>
         `;
-        return;
-    }
-    
-    // Show debug information if available
-    if (data.debug) {
-        console.log('Debug info:', data.debug);
-        console.log('Status counts:', data.debug.status_counts);
-        console.log('Available columns:', data.debug.available_columns);
-    }
-    
-    if (!data.guests || data.guests.length === 0) {
-        let emptyMessage = '';
-        let emptyIcon = 'fas fa-users-slash';
-        
-        if (data.debug && data.debug.status_counts) {
-            const totalRecords = Object.values(data.debug.status_counts).reduce((a, b) => a + b, 0);
-            const approvedCount = data.debug.status_counts['approved'] || 0;
-            
-            if (totalRecords === 0) {
-                emptyMessage = 'No visitor records found in the database';
-                emptyIcon = 'fas fa-database';
-            } else if (approvedCount === 0) {
-                emptyMessage = `Found ${totalRecords} visitor records, but none are approved yet`;
-                emptyIcon = 'fas fa-clock';
-            } else {
-                emptyMessage = currentSearch ? 'No matching guests found' : 'No guests match the current filter';
+                return;
             }
-        } else {
-            emptyMessage = currentSearch ? 'No matching guests found' : 'No approved guests yet';
-        }
-        
-        container.innerHTML = `
+
+            // Show debug information if available
+            if (data.debug) {
+                console.log('Debug info:', data.debug);
+                console.log('Status counts:', data.debug.status_counts);
+                console.log('Available columns:', data.debug.available_columns);
+            }
+
+            if (!data.guests || data.guests.length === 0) {
+                let emptyMessage = '';
+                let emptyIcon = 'fas fa-users-slash';
+
+                if (data.debug && data.debug.status_counts) {
+                    const totalRecords = Object.values(data.debug.status_counts).reduce((a, b) => a + b, 0);
+                    const approvedCount = data.debug.status_counts['approved'] || 0;
+
+                    if (totalRecords === 0) {
+                        emptyMessage = 'No visitor records found in the database';
+                        emptyIcon = 'fas fa-database';
+                    } else if (approvedCount === 0) {
+                        emptyMessage = `Found ${totalRecords} visitor records, but none are approved yet`;
+                        emptyIcon = 'fas fa-clock';
+                    } else {
+                        emptyMessage = currentSearch ? 'No matching guests found' : 'No guests match the current filter';
+                    }
+                } else {
+                    emptyMessage = currentSearch ? 'No matching guests found' : 'No approved guests yet';
+                }
+
+                container.innerHTML = `
             <div class="empty-history">
                    <div class="empty-history-icon">
                        <i class="${emptyIcon}"></i>
@@ -1662,65 +1660,65 @@ function displayGuestHistory(data) {
                    ` : ''}
                </div>
            `;
-           return;
-       }
-       
-       let html = '';
-       
-       data.guests.forEach(guest => {
-           const initials = (guest.name || 'Unknown').split(' ')
-               .map(name => name[0] || '')
-               .slice(0, 2)
-               .join('')
-               .toUpperCase() || 'UN';
-           
-           const approvalDate = guest.approval_timestamp 
-               ? new Date(guest.approval_timestamp)
-               : (guest.created_at ? new Date(guest.created_at) : new Date());
-           
-           const timeAgo = formatTimeAgo(approvalDate);
-           const fullDate = approvalDate.toLocaleDateString('en-US', {
-               year: 'numeric',
-               month: 'long',
-               day: 'numeric',
-               hour: '2-digit',
-               minute: '2-digit'
-           });
-           
-           // Determine status badge and display info
-           let statusBadge = '';
-           let statusInfo = '';
-           
-           if (guest.status === 'approved') {
-               statusBadge = `
+                return;
+            }
+
+            let html = '';
+
+            data.guests.forEach(guest => {
+                const initials = (guest.name || 'Unknown').split(' ')
+                    .map(name => name[0] || '')
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase() || 'UN';
+
+                const approvalDate = guest.approval_timestamp ?
+                    new Date(guest.approval_timestamp) :
+                    (guest.created_at ? new Date(guest.created_at) : new Date());
+
+                const timeAgo = formatTimeAgo(approvalDate);
+                const fullDate = approvalDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                // Determine status badge and display info
+                let statusBadge = '';
+                let statusInfo = '';
+
+                if (guest.status === 'approved') {
+                    statusBadge = `
                    <div class="status-badge">
                        <div class="status-icon"></div>
                        Currently Approved
                    </div>
                `;
-           } else if (guest.status === 'pending') {
-               statusBadge = `<span class="badge bg-warning text-dark">Currently Pending</span>`;
-               statusInfo = ' (Was approved, now pending)';
-           } else if (guest.status === 'denied') {
-               statusBadge = `<span class="badge bg-danger">Currently Denied</span>`;
-               statusInfo = ' (Was approved, now denied)';
-           } else {
-               statusBadge = `<span class="badge bg-secondary">${guest.status || 'Unknown'}</span>`;
-               statusInfo = guest.status !== 'approved' ? ' (Was approved)' : '';
-           }
-           
-           // Show approval history info
-           let approvalInfo = '';
-           if (guest.approval_timestamp && guest.status !== 'approved') {
-               approvalInfo = `
+                } else if (guest.status === 'pending') {
+                    statusBadge = `<span class="badge bg-warning text-dark">Currently Pending</span>`;
+                    statusInfo = ' (Was approved, now pending)';
+                } else if (guest.status === 'denied') {
+                    statusBadge = `<span class="badge bg-danger">Currently Denied</span>`;
+                    statusInfo = ' (Was approved, now denied)';
+                } else {
+                    statusBadge = `<span class="badge bg-secondary">${guest.status || 'Unknown'}</span>`;
+                    statusInfo = guest.status !== 'approved' ? ' (Was approved)' : '';
+                }
+
+                // Show approval history info
+                let approvalInfo = '';
+                if (guest.approval_timestamp && guest.status !== 'approved') {
+                    approvalInfo = `
                    <div class="meta-item">
                        <i class="fas fa-history meta-icon"></i>
                        <span>Was approved: ${new Date(guest.approval_timestamp).toLocaleString()}</span>
                    </div>
                `;
-           }
-           
-           html += `
+                }
+
+                html += `
                <div class="guest-card">
                    <div class="approval-time">
                        <div>${timeAgo}</div>
@@ -1788,209 +1786,209 @@ function displayGuestHistory(data) {
                    </div>
                </div>
            `;
-       });
-       
-       // Add pagination
-       if (data.pages > 1) {
-           html += generatePagination(data);
-       }
-       
-       container.innerHTML = html;
-   }
+            });
 
-   function goToPage(page) {
-       currentPage = page;
-       const debugMode = window.currentDebugMode || false;
-       fetchGuestHistory(page, currentSearch, debugMode);
-   }
+            // Add pagination
+            if (data.pages > 1) {
+                html += generatePagination(data);
+            }
 
-   function generatePagination(data) {
-       let pagination = `
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            const debugMode = window.currentDebugMode || false;
+            fetchGuestHistory(page, currentSearch, debugMode);
+        }
+
+        function generatePagination(data) {
+            let pagination = `
            <div class="pagination-container">
                <div class="pagination-info">
                    Showing ${((data.page - 1) * data.limit) + 1}-${Math.min(data.page * data.limit, data.total)} of ${data.total} guests
                </div>
                <div class="pagination-controls">
        `;
-       
-       // Previous button
-       pagination += `
+
+            // Previous button
+            pagination += `
            <button class="page-btn" ${data.page <= 1 ? 'disabled' : ''} onclick="goToPage(${data.page - 1})">
                <i class="fas fa-chevron-left"></i>
            </button>
        `;
-       
-       // Page numbers
-       const startPage = Math.max(1, data.page - 2);
-       const endPage = Math.min(data.pages, data.page + 2);
-       
-       if (startPage > 1) {
-           pagination += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
-           if (startPage > 2) {
-               pagination += `<span class="page-btn" disabled>...</span>`;
-           }
-       }
-       
-       for (let i = startPage; i <= endPage; i++) {
-           pagination += `
+
+            // Page numbers
+            const startPage = Math.max(1, data.page - 2);
+            const endPage = Math.min(data.pages, data.page + 2);
+
+            if (startPage > 1) {
+                pagination += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    pagination += `<span class="page-btn" disabled>...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                pagination += `
                <button class="page-btn ${i === data.page ? 'active' : ''}" onclick="goToPage(${i})">
                    ${i}
                </button>
            `;
-       }
-       
-       if (endPage < data.pages) {
-           if (endPage < data.pages - 1) {
-               pagination += `<span class="page-btn" disabled>...</span>`;
-           }
-           pagination += `<button class="page-btn" onclick="goToPage(${data.pages})">${data.pages}</button>`;
-       }
-       
-       // Next button
-       pagination += `
+            }
+
+            if (endPage < data.pages) {
+                if (endPage < data.pages - 1) {
+                    pagination += `<span class="page-btn" disabled>...</span>`;
+                }
+                pagination += `<button class="page-btn" onclick="goToPage(${data.pages})">${data.pages}</button>`;
+            }
+
+            // Next button
+            pagination += `
            <button class="page-btn" ${data.page >= data.pages ? 'disabled' : ''} onclick="goToPage(${data.page + 1})">
                <i class="fas fa-chevron-right"></i>
            </button>
        `;
-       
-       pagination += `
+
+            pagination += `
                </div>
            </div>
        `;
-       
-       return pagination;
-   }
 
-   // Search functionality
-   function setupHistorySearch() {
-       const searchInput = document.getElementById('historySearch');
-       const clearButton = document.getElementById('clearSearch');
-       
-       if (!searchInput || !clearButton) return;
-       
-       searchInput.addEventListener('input', function() {
-           const value = this.value.trim();
-           
-           // Show/hide clear button
-           if (value) {
-               clearButton.classList.add('show');
-           } else {
-               clearButton.classList.remove('show');
-           }
-           
-           // Debounce search
-           clearTimeout(searchTimeout);
-           searchTimeout = setTimeout(() => {
-               currentSearch = value;
-               currentPage = 1;
-               const debugMode = window.currentDebugMode || false;
-               fetchGuestHistory(1, value, debugMode);
-           }, 300);
-       });
-       
-       clearButton.addEventListener('click', function() {
-           searchInput.value = '';
-           searchInput.focus();
-           this.classList.remove('show');
-           currentSearch = '';
-           currentPage = 1;
-           const debugMode = window.currentDebugMode || false;
-           fetchGuestHistory(1, '', debugMode);
-       });
-   }
+            return pagination;
+        }
 
-   function formatTimeAgo(date) {
-       const now = new Date();
-       const diff = now - date;
-       const seconds = Math.floor(diff / 1000);
-       const minutes = Math.floor(seconds / 60);
-       const hours = Math.floor(minutes / 60);
-       const days = Math.floor(hours / 24);
-       
-       if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-       if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-       if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-       return 'Just now';
-   }
+        // Search functionality
+        function setupHistorySearch() {
+            const searchInput = document.getElementById('historySearch');
+            const clearButton = document.getElementById('clearSearch');
 
-   function highlightSearchTerm(text, searchTerm) {
-       if (!searchTerm || !text) return text;
-       
-       const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-       return text.replace(regex, '<span class="search-highlight">$1</span>');
-   }
+            if (!searchInput || !clearButton) return;
 
-   // Improved SSE setup with better error handling
-   function setupEventSource() {
-       if (eventSource) {
-           eventSource.close();
-           eventSource = null;
-       }
-       
-       console.log('Setting up EventSource for real-time notifications...');
-       
-       try {
-           eventSource = new EventSource('?sse=1&last_check=' + Math.floor(Date.now()/1000));
-           
-           eventSource.onopen = function(e) {
-               console.log('SSE connection opened');
-           };
-           
-           eventSource.onmessage = function(e) {
-               try {
-                   const data = JSON.parse(e.data);
-                   console.log('SSE message received:', data);
-                   
-                   if (data.type === 'new_request') {
-                       showNotification(data);
-                       // Trigger immediate refresh when new request comes in
-                       setTimeout(() => {
-                           refreshAll();
-                       }, 500);
-                   }
-               } catch (error) {
-                   console.error('Error parsing SSE message:', error);
-               }
-           };
+            searchInput.addEventListener('input', function() {
+                const value = this.value.trim();
 
-           eventSource.onerror = function(e) {
-               console.log('SSE connection error:', e);
-               
-               if (eventSource) {
-                   eventSource.close();
-                   eventSource = null;
-               }
-               
-               // Reconnect after 10 seconds
-               setTimeout(() => {
-                   console.log('Attempting to reconnect SSE...');
-                   setupEventSource();
-               }, 10000);
-           };
-           
-       } catch (error) {
-           console.error('Error setting up EventSource:', error);
-           // Fallback to polling if SSE fails
-           setTimeout(setupEventSource, 15000);
-       }
-   }
+                // Show/hide clear button
+                if (value) {
+                    clearButton.classList.add('show');
+                } else {
+                    clearButton.classList.remove('show');
+                }
 
-   function showNotification(data) {
-       // Try to play notification sound
-       try {
-           const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeAz2b2u/CaSUEK4LN8tuNOQYZa77ry6FCBQQ6nts9OTY4kNXpRCkGLoa1pQYNcLgaLo0iKlJr9cNKTqg5p8+xkJsFGHXnJVJsYXdKFJNGkLqQhAAGcLcbLY0hLFRn9cJMRKs3p8+1jJ4FGXbnJFVpYXdJEZNJxsKo2EtjVMuxfJDanCCDTskOaKbDWZUNLLkZcqzMhZe9rLm0XP5WVqmKaNHq6+L97YdNQQb0qM6xhAa+WnFVzpFtGwZm8PejppCqNOGGQjsGM5jGiJWRIDGOZXFJzpFcF++2g39EaXGEHhNJaGXBDCqIdEKhgaKdYr8ORKZnk3UeK8WyKC4oOWnQ8h8CXZNPNgSKdEKhhKOiYsANTqJklnc=');
-           audio.play().catch(e => console.log('Audio play failed:', e));
-       } catch (e) {
-           console.log('Audio creation failed:', e);
-       }
-       
-       // Create and show toast notification
-       const toastId = 'toast-' + Date.now();
-       const toast = document.createElement('div');
-       toast.id = toastId;
-       toast.className = 'position-fixed bottom-0 end-0 p-3';
-       toast.style.zIndex = '9999';
-       toast.innerHTML = `
+                // Debounce search
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentSearch = value;
+                    currentPage = 1;
+                    const debugMode = window.currentDebugMode || false;
+                    fetchGuestHistory(1, value, debugMode);
+                }, 300);
+            });
+
+            clearButton.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.focus();
+                this.classList.remove('show');
+                currentSearch = '';
+                currentPage = 1;
+                const debugMode = window.currentDebugMode || false;
+                fetchGuestHistory(1, '', debugMode);
+            });
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            return 'Just now';
+        }
+
+        function highlightSearchTerm(text, searchTerm) {
+            if (!searchTerm || !text) return text;
+
+            const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        // Improved SSE setup with better error handling
+        function setupEventSource() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            console.log('Setting up EventSource for real-time notifications...');
+
+            try {
+                eventSource = new EventSource('?sse=1&last_check=' + Math.floor(Date.now() / 1000));
+
+                eventSource.onopen = function(e) {
+                    console.log('SSE connection opened');
+                };
+
+                eventSource.onmessage = function(e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        console.log('SSE message received:', data);
+
+                        if (data.type === 'new_request') {
+                            showNotification(data);
+                            // Trigger immediate refresh when new request comes in
+                            setTimeout(() => {
+                                refreshAll();
+                            }, 500);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing SSE message:', error);
+                    }
+                };
+
+                eventSource.onerror = function(e) {
+                    console.log('SSE connection error:', e);
+
+                    if (eventSource) {
+                        eventSource.close();
+                        eventSource = null;
+                    }
+
+                    // Reconnect after 10 seconds
+                    setTimeout(() => {
+                        console.log('Attempting to reconnect SSE...');
+                        setupEventSource();
+                    }, 10000);
+                };
+
+            } catch (error) {
+                console.error('Error setting up EventSource:', error);
+                // Fallback to polling if SSE fails
+                setTimeout(setupEventSource, 15000);
+            }
+        }
+
+        function showNotification(data) {
+            // Try to play notification sound
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeAz2b2u/CaSUEK4LN8tuNOQYZa77ry6FCBQQ6nts9OTY4kNXpRCkGLoa1pQYNcLgaLo0iKlJr9cNKTqg5p8+xkJsFGHXnJVJsYXdKFJNGkLqQhAAGcLcbLY0hLFRn9cJMRKs3p8+1jJ4FGXbnJFVpYXdJEZNJxsKo2EtjVMuxfJDanCCDTskOaKbDWZUNLLkZcqzMhZe9rLm0XP5WVqmKaNHq6+L97YdNQQb0qM6xhAa+WnFVzpFtGwZm8PejppCqNOGGQjsGM5jGiJWRIDGOZXFJzpFcF++2g39EaXGEHhNJaGXBDCqIdEKhgaKdYr8ORKZnk3UeK8WyKC4oOWnQ8h8CXZNPNgSKdEKhhKOiYsANTqJklnc=');
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            } catch (e) {
+                console.log('Audio creation failed:', e);
+            }
+
+            // Create and show toast notification
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" style="min-width: 300px;">
                <div class="toast-header" style="background-color: var(--primary-color); color: white;">
                    <i class="fas fa-bell me-2"></i>
@@ -2009,91 +2007,91 @@ function displayGuestHistory(data) {
                </div>
            </div>
        `;
-       
-       document.body.appendChild(toast);
-       
-       // Auto-remove after 15 seconds
-       setTimeout(() => {
-           const element = document.getElementById(toastId);
-           if (element) {
-               element.remove();
-           }
-       }, 15000);
-   }
 
-   // Initialize based on active tab
-   document.addEventListener('DOMContentLoaded', function() {
-       console.log('DOM loaded, initializing dashboard...');
-       
-       const activeTab = document.querySelector('.nav-link.active');
-       if (activeTab) {
-           const tabName = activeTab.textContent.trim();
-           console.log('Active tab:', tabName);
-           
-           if (tabName === 'Approvals') {
-               // Initialize approvals functionality
-               console.log('Initializing approvals tab...');
-               
-               // Start auto-refresh
-               setTimeout(() => {
-                   fetchVisitorList();
-                   fetchStats();
-                   setupEventSource();
-               }, 500);
-           } else if (tabName === 'Guest History') {
-               // Initialize history functionality
-               console.log('Initializing history tab...');
-               setupHistorySearch();
-               setTimeout(() => {
-                   fetchGuestHistory(1, '');
-               }, 500);
-           }
-       }
-   });
+            document.body.appendChild(toast);
 
-   // Handle page visibility changes to pause/resume refresh
-   document.addEventListener('visibilitychange', function() {
-       if (document.hidden) {
-           // Page is hidden, pause auto-refresh
-           console.log('Page hidden, pausing auto-refresh');
-           if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
-           if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
-           if (eventSource) {
-               eventSource.close();
-               eventSource = null;
-           }
-       } else {
-           // Page is visible, resume auto-refresh
-           console.log('Page visible, resuming auto-refresh');
-           const activeTab = document.querySelector('.nav-link.active');
-           if (activeTab && activeTab.textContent.trim() === 'Approvals') {
-               setTimeout(() => {
-                   refreshAll();
-               }, 1000);
-           }
-       }
-   });
+            // Auto-remove after 15 seconds
+            setTimeout(() => {
+                const element = document.getElementById(toastId);
+                if (element) {
+                    element.remove();
+                }
+            }, 15000);
+        }
 
-   // Handle window beforeunload to cleanup
-   window.addEventListener('beforeunload', function() {
-       if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
-       if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
-       if (eventSource) {
-           eventSource.close();
-           eventSource = null;
-       }
-   });
+        // Initialize based on active tab
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing dashboard...');
 
-   // Make refresh functions globally available for debugging
-   window.manualRefreshVisitors = fetchVisitorList;
-   window.manualRefreshStats = fetchStats;
-   window.manualRefreshAll = refreshAll;
+            const activeTab = document.querySelector('.nav-link.active');
+            if (activeTab) {
+                const tabName = activeTab.textContent.trim();
+                console.log('Active tab:', tabName);
 
-   // Make history functions globally available
-   window.fetchGuestHistory = fetchGuestHistory;
-   window.goToPage = goToPage;
+                if (tabName === 'Approvals') {
+                    // Initialize approvals functionality
+                    console.log('Initializing approvals tab...');
 
-</script>
+                    // Start auto-refresh
+                    setTimeout(() => {
+                        fetchVisitorList();
+                        fetchStats();
+                        setupEventSource();
+                    }, 500);
+                } else if (tabName === 'Guest History') {
+                    // Initialize history functionality
+                    console.log('Initializing history tab...');
+                    setupHistorySearch();
+                    setTimeout(() => {
+                        fetchGuestHistory(1, '');
+                    }, 500);
+                }
+            }
+        });
+
+        // Handle page visibility changes to pause/resume refresh
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Page is hidden, pause auto-refresh
+                console.log('Page hidden, pausing auto-refresh');
+                if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
+                if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            } else {
+                // Page is visible, resume auto-refresh
+                console.log('Page visible, resuming auto-refresh');
+                const activeTab = document.querySelector('.nav-link.active');
+                if (activeTab && activeTab.textContent.trim() === 'Approvals') {
+                    setTimeout(() => {
+                        refreshAll();
+                    }, 1000);
+                }
+            }
+        });
+
+        // Handle window beforeunload to cleanup
+        window.addEventListener('beforeunload', function() {
+            if (visitorRefreshTimeout) clearTimeout(visitorRefreshTimeout);
+            if (statsRefreshTimeout) clearTimeout(statsRefreshTimeout);
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        });
+
+        // Make refresh functions globally available for debugging
+        window.manualRefreshVisitors = fetchVisitorList;
+        window.manualRefreshStats = fetchStats;
+        window.manualRefreshAll = refreshAll;
+
+        // Make history functions globally available
+        window.fetchGuestHistory = fetchGuestHistory;
+        window.goToPage = goToPage;
+    </script>
 
 </body>
+
 </html>

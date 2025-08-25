@@ -2,10 +2,7 @@
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Set timezone for consistent date handling
 date_default_timezone_set('Africa/Lagos');
@@ -29,14 +26,14 @@ if (isset($_SESSION['admin_id'])) {
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     header('Cache-Control: no-cache, must-revalidate');
-    
+
     try {
         if ($_GET['ajax'] == 'dashboard_stats') {
             $today = date('Y-m-d');
-            
+
             // Get comprehensive statistics with error checking
             $stats = [];
-            
+
             // Visitors today
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = ?");
             $stmt->bind_param("s", $today);
@@ -44,21 +41,21 @@ if (isset($_GET['ajax'])) {
             $result = $stmt->get_result();
             $stats['visitors_today'] = $result->fetch_assoc()['count'] ?? 0;
             $stmt->close();
-            
+
             // Approved visitors
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'approved'");
             $stmt->execute();
             $result = $stmt->get_result();
             $stats['approved_visitors'] = $result->fetch_assoc()['count'] ?? 0;
             $stmt->close();
-            
+
             // Pending requests
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'pending'");
             $stmt->execute();
             $result = $stmt->get_result();
             $stats['pending_requests'] = $result->fetch_assoc()['count'] ?? 0;
             $stmt->close();
-            
+
             // Checked out today
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'checked_out' AND DATE(check_out_time) = ?");
             $stmt->bind_param("s", $today);
@@ -66,14 +63,14 @@ if (isset($_GET['ajax'])) {
             $result = $stmt->get_result();
             $stats['checked_out'] = $result->fetch_assoc()['count'] ?? 0;
             $stmt->close();
-            
+
             // Currently inside
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'checked_in'");
             $stmt->execute();
             $result = $stmt->get_result();
             $stats['currently_inside'] = $result->fetch_assoc()['count'] ?? 0;
             $stmt->close();
-            
+
             // Status breakdown for donut chart - Fixed query
             $stmt = $conn->prepare("SELECT status, COUNT(*) as count FROM visitors WHERE status IS NOT NULL GROUP BY status ORDER BY count DESC");
             $stmt->execute();
@@ -84,7 +81,7 @@ if (isset($_GET['ajax'])) {
             }
             $stats['status_breakdown'] = $status_data;
             $stmt->close();
-            
+
             // Hourly traffic for today - Fixed query
             $stmt = $conn->prepare("
                 SELECT HOUR(created_at) as hour, COUNT(*) as count 
@@ -96,7 +93,7 @@ if (isset($_GET['ajax'])) {
             $stmt->bind_param("s", $today);
             $stmt->execute();
             $hourly_result = $stmt->get_result();
-            
+
             // Initialize 24-hour array
             $hourly_data = array_fill(0, 24, 0);
             while ($row = $hourly_result->fetch_assoc()) {
@@ -104,15 +101,15 @@ if (isset($_GET['ajax'])) {
             }
             $stats['hourly_traffic'] = $hourly_data;
             $stmt->close();
-            
+
             echo json_encode($stats);
             exit();
         }
-        
+
         if ($_GET['ajax'] == 'upcoming_visitors') {
             $today = date('Y-m-d');
             $tomorrow = date('Y-m-d', strtotime('+1 day'));
-            
+
             $stmt = $conn->prepare("
                 SELECT name, organization, visit_date, time_of_visit, host_name, status
                 FROM visitors 
@@ -124,7 +121,7 @@ if (isset($_GET['ajax'])) {
             $stmt->bind_param("ss", $today, $tomorrow);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $upcoming = [];
             while ($row = $result->fetch_assoc()) {
                 $upcoming[] = [
@@ -137,11 +134,11 @@ if (isset($_GET['ajax'])) {
                 ];
             }
             $stmt->close();
-            
+
             echo json_encode($upcoming);
             exit();
         }
-        
+
         if ($_GET['ajax'] == 'live_visitors') {
             $stmt = $conn->prepare("
                 SELECT name, organization, check_in_time, host_name, floor_of_visit, status
@@ -152,7 +149,7 @@ if (isset($_GET['ajax'])) {
             ");
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $live_visitors = [];
             while ($row = $result->fetch_assoc()) {
                 $live_visitors[] = [
@@ -165,11 +162,11 @@ if (isset($_GET['ajax'])) {
                 ];
             }
             $stmt->close();
-            
+
             echo json_encode($live_visitors);
             exit();
         }
-        
+
         if ($_GET['ajax'] == 'activity_feed') {
             $stmt = $conn->prepare("
                 SELECT name, status, updated_at, host_name, organization
@@ -180,7 +177,7 @@ if (isset($_GET['ajax'])) {
             ");
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $activities = [];
             while ($row = $result->fetch_assoc()) {
                 $activities[] = [
@@ -192,11 +189,11 @@ if (isset($_GET['ajax'])) {
                 ];
             }
             $stmt->close();
-            
+
             echo json_encode($activities);
             exit();
         }
-        
+
         if ($_GET['ajax'] == 'visitor_locations') {
             $stmt = $conn->prepare("
                 SELECT name, floor_of_visit, status, check_in_time, organization
@@ -206,7 +203,7 @@ if (isset($_GET['ajax'])) {
             ");
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $locations = [];
             while ($row = $result->fetch_assoc()) {
                 $locations[] = [
@@ -218,17 +215,16 @@ if (isset($_GET['ajax'])) {
                 ];
             }
             $stmt->close();
-            
+
             echo json_encode($locations);
             exit();
         }
-        
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
         exit();
     }
-    
+
     // If no matching ajax parameter
     http_response_code(400);
     echo json_encode(['error' => 'Invalid AJAX request']);
@@ -238,39 +234,38 @@ if (isset($_GET['ajax'])) {
 // Get basic stats for initial load with error handling
 try {
     $today = date('Y-m-d');
-    
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = ?");
     $stmt->bind_param("s", $today);
     $stmt->execute();
     $result = $stmt->get_result();
     $visitors_today = $result->fetch_assoc()['count'] ?? 0;
     $stmt->close();
-    
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'approved'");
     $stmt->execute();
     $result = $stmt->get_result();
     $approved_visitors = $result->fetch_assoc()['count'] ?? 0;
     $stmt->close();
-    
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'pending'");
     $stmt->execute();
     $result = $stmt->get_result();
     $pending_requests = $result->fetch_assoc()['count'] ?? 0;
     $stmt->close();
-    
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'checked_out' AND DATE(check_out_time) = ?");
     $stmt->bind_param("s", $today);
     $stmt->execute();
     $result = $stmt->get_result();
     $checked_out = $result->fetch_assoc()['count'] ?? 0;
     $stmt->close();
-    
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM visitors WHERE status = 'checked_in'");
     $stmt->execute();
     $result = $stmt->get_result();
     $currently_inside = $result->fetch_assoc()['count'] ?? 0;
     $stmt->close();
-    
 } catch (Exception $e) {
     // Fallback values if database queries fail
     $visitors_today = 0;
@@ -285,6 +280,7 @@ try {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -295,6 +291,7 @@ try {
     <link href="assets/admin-dashboard.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <!-- Refresh Indicator -->
     <div class="refresh-indicator" id="refreshIndicator">
@@ -531,7 +528,7 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/admin-dashboard.js"></script>
-    
+
     <!-- Debug Console Output -->
     <script>
         console.log('Dashboard loaded at:', new Date().toLocaleString());
@@ -544,6 +541,7 @@ try {
         });
     </script>
 </body>
+
 </html>
 
 <?php $conn->close(); ?>

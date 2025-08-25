@@ -1,6 +1,6 @@
 <?php
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 
 // Check connection
 if ($conn->connect_error) {
@@ -53,7 +53,7 @@ if (isset($_GET['id'])) {
 
     // Update visitor status to denied
     $result = $conn->query("UPDATE visitors SET status='rejected' WHERE id=$id");
-    
+
     if ($result) {
         // Success response with Bootstrap styling
         echo "
@@ -157,4 +157,3 @@ if (isset($_GET['id'])) {
 
 // Close database connection
 $conn->close();
-?>

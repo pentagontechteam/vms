@@ -6,10 +6,7 @@ if (!isset($_SESSION['receptionist_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 $group_id = isset($_GET['group_id']) ? $conn->real_escape_string($_GET['group_id']) : '';
 
@@ -36,7 +33,7 @@ $output = fopen('php://output', 'w');
 fputcsv($output, [
     'Group ID',
     'Name',
-    'Phone', 
+    'Phone',
     'Email',
     'Organization',
     'Host Name',
@@ -73,4 +70,3 @@ while ($row = $result->fetch_assoc()) {
 fclose($output);
 $stmt->close();
 $conn->close();
-?>

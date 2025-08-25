@@ -6,11 +6,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    http_response_code(500);
-    die(json_encode(['success' => false, 'error' => 'Connection failed: ' . $conn->connect_error]));
-}
+require 'db_connection.php';
 
 // Set charset and timezone
 $conn->set_charset("utf8");
@@ -76,19 +72,19 @@ try {
 
 function getEmployees() {
     global $conn;
-    
+
     $page = max(1, (int)($_GET['page'] ?? 1));
     $limit = 10;
     $offset = ($page - 1) * $limit;
-    
+
     error_log("Getting employees for page: $page");
-    
+
     try {
         // Build WHERE clause for filters
         $whereConditions = [];
         $params = [];
         $types = '';
-        
+
         // Search functionality
         if (!empty($_GET['search'])) {
             $searchTerm = '%' . $_GET['search'] . '%';
@@ -96,14 +92,14 @@ function getEmployees() {
             $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
             $types .= 'ssss';
         }
-        
+
         // Department filter
         if (!empty($_GET['department'])) {
             $whereConditions[] = "designation LIKE ?";
             $params[] = '%' . $_GET['department'] . '%';
             $types .= 's';
         }
-        
+
         // Status filter (based on profile completion)
         if (!empty($_GET['status'])) {
             if ($_GET['status'] === 'active') {
@@ -112,9 +108,9 @@ function getEmployees() {
                 $whereConditions[] = "profile_completed = 0";
             }
         }
-        
+
         $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-        
+
         // Get total count
         $countQuery = "SELECT COUNT(*) as total FROM employees $whereClause";
         if (!empty($params)) {
@@ -133,7 +129,7 @@ function getEmployees() {
             }
             $totalRecords = $result->fetch_assoc()['total'];
         }
-        
+
         // Get employees with guest count
         $query = "
             SELECT e.*, 
@@ -149,46 +145,50 @@ function getEmployees() {
             ORDER BY e.created_at DESC 
             LIMIT ? OFFSET ?
         ";
-        
+
         $stmt = $conn->prepare($query);
         if (!$stmt) {
             throw new Exception("Prepare failed for employees query: " . $conn->error);
         }
-        
+
         $allParams = $params;
         $allParams[] = $limit;
         $allParams[] = $offset;
         $allTypes = $types . 'ii';
-        
+
         $stmt->bind_param($allTypes, ...$allParams);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $employees = [];
         while ($row = $result->fetch_assoc()) {
             $employees[] = $row;
         }
         $stmt->close();
-        
+
         // Apply host filter after getting guest counts
         if (!empty($_GET['host_filter'])) {
             if ($_GET['host_filter'] === 'hosts_only') {
-                $employees = array_filter($employees, function($emp) { return $emp['guest_count'] > 0; });
+                $employees = array_filter($employees, function ($emp) {
+                    return $emp['guest_count'] > 0;
+                });
             } elseif ($_GET['host_filter'] === 'non_hosts') {
-                $employees = array_filter($employees, function($emp) { return $emp['guest_count'] == 0; });
+                $employees = array_filter($employees, function ($emp) {
+                    return $emp['guest_count'] == 0;
+                });
             }
             // Recalculate totals for filtered results
             $totalRecords = count($employees);
             $employees = array_slice($employees, 0, $limit);
         }
-        
+
         // Calculate pagination
         $totalPages = ceil($totalRecords / $limit);
         $showingStart = $totalRecords > 0 ? $offset + 1 : 0;
         $showingEnd = min($offset + $limit, $totalRecords);
-        
+
         error_log("Retrieved " . count($employees) . " employees");
-        
+
         echo json_encode([
             'success' => true,
             'employees' => array_values($employees), // Reset array keys
@@ -203,7 +203,6 @@ function getEmployees() {
                 'showing_end' => $showingEnd
             ]
         ]);
-        
     } catch (Exception $e) {
         error_log("Exception in getEmployees: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error getting employees: ' . $e->getMessage()]);
@@ -212,17 +211,17 @@ function getEmployees() {
 
 function getStats() {
     global $conn;
-    
+
     try {
         $today = date('Y-m-d');
-        
+
         // Total employees
         $totalEmployees = 0;
         $result = $conn->query("SELECT COUNT(*) as count FROM employees");
         if ($result) {
             $totalEmployees = $result->fetch_assoc()['count'];
         }
-        
+
         // Active hosts (employees with assigned guests)
         $activeHosts = 0;
         $result = $conn->query("
@@ -234,7 +233,7 @@ function getStats() {
         if ($result) {
             $activeHosts = $result->fetch_assoc()['count'];
         }
-        
+
         // Today's hosts (employees hosting visitors today)
         $todaysHosts = 0;
         $stmt = $conn->prepare("
@@ -251,7 +250,7 @@ function getStats() {
             $todaysHosts = $result->fetch_assoc()['count'];
             $stmt->close();
         }
-        
+
         // Total assigned guests
         $totalGuests = 0;
         $result = $conn->query("
@@ -263,7 +262,7 @@ function getStats() {
         if ($result) {
             $totalGuests = $result->fetch_assoc()['count'];
         }
-        
+
         echo json_encode([
             'success' => true,
             'stats' => [
@@ -273,7 +272,6 @@ function getStats() {
                 'total_guests' => (int)$totalGuests
             ]
         ]);
-        
     } catch (Exception $e) {
         error_log("Exception in getStats: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error getting stats: ' . $e->getMessage()]);
@@ -282,37 +280,37 @@ function getStats() {
 
 function createEmployee() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $data = $input['data'] ?? [];
-    
+
     error_log("Creating employee with data: " . json_encode($data));
-    
+
     if (empty($data['name']) || empty($data['email'])) {
         echo json_encode(['success' => false, 'message' => 'Name and email are required']);
         return;
     }
-    
+
     try {
         // Check if email already exists
         $checkStmt = $conn->prepare("SELECT id FROM employees WHERE email = ?");
         $checkStmt->bind_param("s", $data['email']);
         $checkStmt->execute();
         $result = $checkStmt->get_result();
-        
+
         if ($result->num_rows > 0) {
             echo json_encode(['success' => false, 'message' => 'Email already exists']);
             $checkStmt->close();
             return;
         }
         $checkStmt->close();
-        
+
         // Insert new employee
         $stmt = $conn->prepare("
             INSERT INTO employees (name, email, phone, country_code, designation, organization, profile_completed, created_at) 
             VALUES (?, ?, ?, ?, ?, ?, 1, NOW())
         ");
-        
+
         $stmt->bind_param(
             "ssssss",
             $data['name'],
@@ -322,7 +320,7 @@ function createEmployee() {
             $data['designation'] ?? '',
             $data['organization'] ?? ''
         );
-        
+
         if ($stmt->execute()) {
             $insertId = $conn->insert_id;
             error_log("Employee created successfully with ID: $insertId");
@@ -330,9 +328,8 @@ function createEmployee() {
         } else {
             throw new Exception('Failed to create employee: ' . $stmt->error);
         }
-        
+
         $stmt->close();
-        
     } catch (Exception $e) {
         error_log("Exception in createEmployee: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error creating employee: ' . $e->getMessage()]);
@@ -341,38 +338,38 @@ function createEmployee() {
 
 function updateEmployee() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $data = $input['data'] ?? [];
-    
+
     error_log("Updating employee with data: " . json_encode($data));
-    
+
     if (empty($data['id']) || empty($data['name']) || empty($data['email'])) {
         echo json_encode(['success' => false, 'message' => 'ID, name and email are required']);
         return;
     }
-    
+
     try {
         // Check if email already exists for different employee
         $checkStmt = $conn->prepare("SELECT id FROM employees WHERE email = ? AND id != ?");
         $checkStmt->bind_param("si", $data['email'], $data['id']);
         $checkStmt->execute();
         $result = $checkStmt->get_result();
-        
+
         if ($result->num_rows > 0) {
             echo json_encode(['success' => false, 'message' => 'Email already exists']);
             $checkStmt->close();
             return;
         }
         $checkStmt->close();
-        
+
         // Update employee
         $stmt = $conn->prepare("
             UPDATE employees 
             SET name = ?, email = ?, phone = ?, country_code = ?, designation = ?, organization = ?
             WHERE id = ?
         ");
-        
+
         $stmt->bind_param(
             "ssssssi",
             $data['name'],
@@ -383,7 +380,7 @@ function updateEmployee() {
             $data['organization'] ?? '',
             $data['id']
         );
-        
+
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
                 error_log("Employee updated successfully");
@@ -394,9 +391,8 @@ function updateEmployee() {
         } else {
             throw new Exception('Failed to update employee: ' . $stmt->error);
         }
-        
+
         $stmt->close();
-        
     } catch (Exception $e) {
         error_log("Exception in updateEmployee: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error updating employee: ' . $e->getMessage()]);
@@ -405,31 +401,31 @@ function updateEmployee() {
 
 function deleteEmployee() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $id = (int)($input['id'] ?? 0);
-    
+
     error_log("Deleting employee with ID: $id");
-    
+
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid employee ID']);
         return;
     }
-    
+
     try {
         // Start transaction
         $conn->begin_transaction();
-        
+
         // Update visitors to remove employee reference
         $updateVisitorsStmt = $conn->prepare("UPDATE visitors SET employee_id = NULL WHERE employee_id = ?");
         $updateVisitorsStmt->bind_param("i", $id);
         $updateVisitorsStmt->execute();
         $updateVisitorsStmt->close();
-        
+
         // Delete employee
         $deleteStmt = $conn->prepare("DELETE FROM employees WHERE id = ?");
         $deleteStmt->bind_param("i", $id);
-        
+
         if ($deleteStmt->execute()) {
             if ($deleteStmt->affected_rows > 0) {
                 $conn->commit();
@@ -443,9 +439,8 @@ function deleteEmployee() {
             $conn->rollback();
             throw new Exception('Failed to delete employee: ' . $deleteStmt->error);
         }
-        
+
         $deleteStmt->close();
-        
     } catch (Exception $e) {
         $conn->rollback();
         error_log("Exception in deleteEmployee: " . $e->getMessage());
@@ -455,53 +450,55 @@ function deleteEmployee() {
 
 function bulkDelete() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $ids = $input['ids'] ?? [];
-    
+
     error_log("Bulk deleting employees with IDs: " . json_encode($ids));
-    
+
     if (empty($ids) || !is_array($ids)) {
         echo json_encode(['success' => false, 'message' => 'No employees selected']);
         return;
     }
-    
+
     // Sanitize IDs
     $ids = array_map('intval', $ids);
-    $ids = array_filter($ids, function($id) { return $id > 0; });
-    
+    $ids = array_filter($ids, function ($id) {
+        return $id > 0;
+    });
+
     if (empty($ids)) {
         echo json_encode(['success' => false, 'message' => 'Invalid employee IDs']);
         return;
     }
-    
+
     try {
         // Start transaction
         $conn->begin_transaction();
-        
+
         $placeholders = str_repeat('?,', count($ids) - 1) . '?';
-        
+
         // Update visitors to remove employee references
         $updateQuery = "UPDATE visitors SET employee_id = NULL WHERE employee_id IN ($placeholders)";
         $updateStmt = $conn->prepare($updateQuery);
         if (!$updateStmt) {
             throw new Exception('Failed to prepare update statement: ' . $conn->error);
         }
-        
+
         $types = str_repeat('i', count($ids));
         $updateStmt->bind_param($types, ...$ids);
         $updateStmt->execute();
         $updateStmt->close();
-        
+
         // Delete employees
         $deleteQuery = "DELETE FROM employees WHERE id IN ($placeholders)";
         $deleteStmt = $conn->prepare($deleteQuery);
         if (!$deleteStmt) {
             throw new Exception('Failed to prepare delete statement: ' . $conn->error);
         }
-        
+
         $deleteStmt->bind_param($types, ...$ids);
-        
+
         if ($deleteStmt->execute()) {
             $deletedCount = $deleteStmt->affected_rows;
             $conn->commit();
@@ -511,9 +508,8 @@ function bulkDelete() {
             $conn->rollback();
             throw new Exception('Failed to bulk delete employees: ' . $deleteStmt->error);
         }
-        
+
         $deleteStmt->close();
-        
     } catch (Exception $e) {
         $conn->rollback();
         error_log("Exception in bulkDelete: " . $e->getMessage());
@@ -523,21 +519,23 @@ function bulkDelete() {
 
 function exportEmployees() {
     global $conn;
-    
+
     error_log("Exporting employees");
-    
+
     try {
         // Build WHERE clause for filters (same as getEmployees)
         $whereConditions = [];
         $params = [];
         $types = '';
-        
+
         // Handle specific IDs for bulk export
         if (!empty($_GET['ids'])) {
             $ids = explode(',', $_GET['ids']);
             $ids = array_map('intval', $ids);
-            $ids = array_filter($ids, function($id) { return $id > 0; });
-            
+            $ids = array_filter($ids, function ($id) {
+                return $id > 0;
+            });
+
             if (!empty($ids)) {
                 $placeholders = str_repeat('?,', count($ids) - 1) . '?';
                 $whereConditions[] = "e.id IN ($placeholders)";
@@ -552,13 +550,13 @@ function exportEmployees() {
                 $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
                 $types .= 'ssss';
             }
-            
+
             if (!empty($_GET['department'])) {
                 $whereConditions[] = "e.designation LIKE ?";
                 $params[] = '%' . $_GET['department'] . '%';
                 $types .= 's';
             }
-            
+
             if (!empty($_GET['status'])) {
                 if ($_GET['status'] === 'active') {
                     $whereConditions[] = "e.profile_completed = 1";
@@ -567,9 +565,9 @@ function exportEmployees() {
                 }
             }
         }
-        
+
         $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-        
+
         // Get employees with guest count
         $query = "
             SELECT e.name, e.email, e.phone, e.country_code, e.designation, e.organization, 
@@ -585,7 +583,7 @@ function exportEmployees() {
             $whereClause 
             ORDER BY e.created_at DESC
         ";
-        
+
         if (!empty($params)) {
             $stmt = $conn->prepare($query);
             if (!$stmt) {
@@ -600,23 +598,30 @@ function exportEmployees() {
                 throw new Exception('Export query failed: ' . $conn->error);
             }
         }
-        
+
         // Set headers for CSV download
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="employees_export_' . date('Y-m-d_H-i-s') . '.csv"');
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: 0');
-        
+
         // Output CSV with BOM for Excel compatibility
         $output = fopen('php://output', 'w');
-        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-        
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
+
         // CSV headers
         fputcsv($output, [
-            'Name', 'Email', 'Phone', 'Country Code', 'Designation', 'Organization', 
-            'Profile Completed', 'Assigned Guests', 'Created At'
+            'Name',
+            'Email',
+            'Phone',
+            'Country Code',
+            'Designation',
+            'Organization',
+            'Profile Completed',
+            'Assigned Guests',
+            'Created At'
         ]);
-        
+
         // Output data rows
         while ($row = $result->fetch_assoc()) {
             $csvRow = [
@@ -632,15 +637,14 @@ function exportEmployees() {
             ];
             fputcsv($output, $csvRow);
         }
-        
+
         fclose($output);
-        
+
         if (isset($stmt)) {
             $stmt->close();
         }
-        
+
         error_log("Successfully exported employees");
-        
     } catch (Exception $e) {
         error_log("Exception in exportEmployees: " . $e->getMessage());
         http_response_code(500);
@@ -648,5 +652,3 @@ function exportEmployees() {
         echo json_encode(['success' => false, 'error' => 'Export failed: ' . $e->getMessage()]);
     }
 }
-
-?>

@@ -2,11 +2,7 @@
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-// $conn = new mysqli("localhost", "root", "", "visitor_db");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Fetch list of hosts
 $hosts = [];
@@ -19,6 +15,7 @@ while ($row = $host_result->fetch_assoc()) {
 // Include PHPMailer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+
 require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
@@ -61,9 +58,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guests'])) {
             (name, phone, email, organization, reason, host_name, visit_date, time_of_visit, floor_of_visit, status, requested_by_receptionist, receptionist_id, employee_id, check_in_time)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'checked_in', 1, ?, ?, ?)");
 
-        $stmt->bind_param("sssssssssiis", 
-            $name, $phone, $email, $organization, $reason, $host_name, $visit_date, $arrival_time, $floor_of_visit,
-            $receptionist_id, $host_id, $current_datetime);
+        $stmt->bind_param(
+            "sssssssssiis",
+            $name,
+            $phone,
+            $email,
+            $organization,
+            $reason,
+            $host_name,
+            $visit_date,
+            $arrival_time,
+            $floor_of_visit,
+            $receptionist_id,
+            $host_id,
+            $current_datetime
+        );
 
         $stmt->execute();
         $stmt->close();
@@ -99,6 +108,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -114,25 +124,25 @@ $conn->close();
             --light-bg: #f8f9fa;
             --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
-        
+
         body {
             background-color: var(--light-bg);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: #333;
             line-height: 1.6;
         }
-        
+
         .navbar-brand {
             font-weight: 600;
             color: var(--primary-dark) !important;
         }
-        
+
         .container {
             max-width: 900px;
             margin-top: 40px;
             margin-bottom: 80px;
         }
-        
+
         .form-card {
             background: white;
             border-radius: 12px;
@@ -141,7 +151,7 @@ $conn->close();
             box-shadow: var(--card-shadow);
             border-top: 4px solid var(--primary);
         }
-        
+
         .form-title {
             color: var(--primary-dark);
             font-weight: 600;
@@ -149,7 +159,7 @@ $conn->close();
             position: relative;
             padding-bottom: 10px;
         }
-        
+
         .form-title:after {
             content: '';
             position: absolute;
@@ -159,31 +169,33 @@ $conn->close();
             height: 3px;
             background: var(--accent);
         }
-        
+
         .form-label {
             font-weight: 500;
             color: #555;
             margin-bottom: 8px;
         }
-        
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             padding: 12px 15px;
             border-radius: 8px;
             border: 1px solid #ddd;
             transition: all 0.3s;
         }
-        
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 0.25rem rgba(7, 175, 139, 0.15);
         }
-        
+
         .form-control:disabled {
             background-color: #f8f9fa;
             opacity: 0.8;
             cursor: not-allowed;
         }
-        
+
         .btn-primary {
             background-color: var(--primary);
             border: none;
@@ -193,12 +205,12 @@ $conn->close();
             letter-spacing: 0.5px;
             transition: all 0.3s;
         }
-        
+
         .btn-primary:hover {
             background-color: var(--primary-dark);
             transform: translateY(-2px);
         }
-        
+
         .btn-outline {
             border: 2px solid var(--primary);
             color: var(--primary);
@@ -208,12 +220,12 @@ $conn->close();
             font-weight: 500;
             transition: all 0.3s;
         }
-        
+
         .btn-outline:hover {
             background-color: var(--primary);
             color: white;
         }
-        
+
         .visitor-badge {
             background-color: var(--accent);
             color: #333;
@@ -224,30 +236,31 @@ $conn->close();
             margin-bottom: 15px;
             font-size: 0.85rem;
         }
-        
+
         .success-modal .modal-header {
             background-color: var(--primary);
             color: white;
         }
-        
+
         .success-icon {
             color: var(--primary);
             font-size: 3rem;
             margin-bottom: 20px;
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 margin-top: 20px;
                 padding: 0 15px;
             }
-            
+
             .form-card {
                 padding: 20px;
             }
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
@@ -258,11 +271,11 @@ $conn->close();
                     <p class="text-muted">Please fill in the details of the visitors</p>
                 </div>
 
-        <div class="mb-4">
-    <a href="vmc_dashboard.php" class="btn btn-outline">
-        <i class="bi bi-house-door-fill me-2"></i>Go Back Home
-    </a>
-</div>
+                <div class="mb-4">
+                    <a href="vmc_dashboard.php" class="btn btn-outline">
+                        <i class="bi bi-house-door-fill me-2"></i>Go Back Home
+                    </a>
+                </div>
 
                 <form method="POST" id="visitorForm">
                     <div id="guest-forms">
@@ -278,7 +291,7 @@ $conn->close();
                                     <label class="form-label">Phone Number (Optional)</label>
                                     <input type="tel" name="guests[0][phone]" class="form-control">
                                 </div>
-                               <!-- <div class="col-md-6">
+                                <!-- <div class="col-md-6">
                                     <label class="form-label">Email</label>
                                     <input type="email" name="guests[0][email]" class="form-control">
                                 </div> -->
@@ -306,7 +319,7 @@ $conn->close();
                                         <option value="Floor 4 - Left Wing">Floor 4 - Left Wing</option>
                                         <option value="Floor 5 - Right Wing">Floor 5 - Right Wing</option>
                                         <option value="Floor 5 - Left Wing">Floor 5 - Left Wing</option>
-                                        <option value="Floor 6 - Right Wing">Floor 6 -  Right Wing</option>
+                                        <option value="Floor 6 - Right Wing">Floor 6 - Right Wing</option>
                                         <option value="Floor 6 - Left Wing">Floor 6 - Left Wing </option>
                                         <option value="Floor 7 - Right Wing">Floor 7 - Right Wing</option>
                                         <option value="Floor 7 - Left Wing">Floor 7 - Left Wing</option>
@@ -316,9 +329,9 @@ $conn->close();
                                         <option value="Floor 9 - Left Wing">Floor 9 - Left Wing</option>
                                     </select>
                                 </div>
-                                 <div class="col-md-6">
+                                <div class="col-md-6">
                                     <label class="form-label">Host (Optional)</label>
-                                    <select name="guests[0][host_id]" class="form-select" >
+                                    <select name="guests[0][host_id]" class="form-select">
                                         <option value="">-- Select Host --</option>
                                         <?php foreach ($hosts as $host): ?>
                                             <option value="<?= $host['id'] ?>"><?= htmlspecialchars($host['name']) ?></option>
@@ -332,7 +345,7 @@ $conn->close();
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mt-4">
                         <button type="button" class="btn btn-outline" onclick="addGuestForm()">
                             <i class="bi bi-plus-circle me-2"></i>Add Another Visitor
@@ -371,10 +384,11 @@ $conn->close();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let guestCount = 1;
+
         function addGuestForm() {
             const container = document.getElementById('guest-forms');
             const index = guestCount++;
-            
+
             const formHTML = `
             <div class="form-card mt-4">
                 <span class="visitor-badge"><i class="bi bi-person-plus me-2"></i>Visitor ${index + 1}</span>
@@ -439,21 +453,25 @@ $conn->close();
                 </div>
             </div>`;
             container.insertAdjacentHTML('beforeend', formHTML);
-            
+
             // Smooth scroll to the new form
             const newForm = container.lastElementChild;
-            newForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            newForm.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
         }
-        
+
         <?php if (!empty($success_message)): ?>
-        document.addEventListener('DOMContentLoaded', function() {
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
-            
-            // Clear form after successful submission if needed
-            document.getElementById('visitorForm').reset();
-        });
+            document.addEventListener('DOMContentLoaded', function() {
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+
+                // Clear form after successful submission if needed
+                document.getElementById('visitorForm').reset();
+            });
         <?php endif; ?>
     </script>
 </body>
+
 </html>

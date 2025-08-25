@@ -9,14 +9,12 @@ session_start();
 //}
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,11 +27,13 @@ if ($conn->connect_error) {
             margin: 0 auto;
             position: relative;
         }
+
         #qr-video {
             width: 100%;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .scan-overlay {
             position: absolute;
             width: 80%;
@@ -42,13 +42,15 @@ if ($conn->connect_error) {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5);
         }
+
         .status-card {
             display: none;
         }
     </style>
 </head>
+
 <body class="bg-dark">
     <div class="container py-5">
         <div class="text-center mb-4">
@@ -97,7 +99,9 @@ if ($conn->connect_error) {
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }
+                    video: {
+                        facingMode: "environment"
+                    }
                 });
                 video.srcObject = stream;
                 video.play();
@@ -119,10 +123,10 @@ if ($conn->connect_error) {
                 canvas.height = video.videoHeight;
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
+
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
+
                 if (code) {
                     handleQRCode(code.data);
                 }
@@ -133,7 +137,7 @@ if ($conn->connect_error) {
         function handleQRCode(data) {
             // Extract visitor ID from QR code data
             const visitorId = data.split('=')[1];
-            
+
             fetch(`approve_visitor.php?id=${visitorId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -146,7 +150,7 @@ if ($conn->connect_error) {
                             Host: ${data.visitor.host_name}<br>
                             Time: ${new Date().toLocaleTimeString()}
                         `;
-                        
+
                         // Reset after 5 seconds
                         setTimeout(() => {
                             statusCard.style.display = "none";
@@ -161,4 +165,5 @@ if ($conn->connect_error) {
         }
     </script>
 </body>
+
 </html>

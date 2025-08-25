@@ -2,10 +2,7 @@
 session_start();
 
 // premises_dashboard.php - Management overview
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['receptionist_id'])) {
@@ -69,6 +66,7 @@ while ($row = $weekly_result->fetch_assoc()) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -79,7 +77,7 @@ while ($row = $weekly_result->fetch_assoc()) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <style>
         :root {
             --primary-green: #07AF8B;
@@ -90,9 +88,9 @@ while ($row = $weekly_result->fetch_assoc()) {
             --text-primary: #1C1C1E;
             --text-secondary: #8E8E93;
             --border-light: #E5E5EA;
-            --shadow-light: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-medium: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-large: 0 8px 32px rgba(0,0,0,0.12);
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.12);
             --radius-small: 12px;
             --radius-medium: 16px;
             --radius-large: 24px;
@@ -348,9 +346,20 @@ while ($row = $weekly_result->fetch_assoc()) {
             letter-spacing: 0.02em;
         }
 
-        .badge-primary { background: var(--primary-green); color: white; }
-        .badge-secondary { background: var(--primary-yellow); color: var(--text-primary); }
-        .badge-tertiary { background: var(--primary-dark-green); color: white; }
+        .badge-primary {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .badge-secondary {
+            background: var(--primary-yellow);
+            color: var(--text-primary);
+        }
+
+        .badge-tertiary {
+            background: var(--primary-dark-green);
+            color: white;
+        }
 
         /* Quick Actions */
         .quick-actions-card {
@@ -463,9 +472,12 @@ while ($row = $weekly_result->fetch_assoc()) {
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 1;
             }
+
             50% {
                 opacity: .5;
             }
@@ -477,6 +489,7 @@ while ($row = $weekly_result->fetch_assoc()) {
         }
     </style>
 </head>
+
 <body>
     <div class="main-container">
         <!-- Header -->
@@ -494,7 +507,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </div>
             </div>
         </div>
-        
+
         <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card stat-card-primary">
@@ -505,7 +518,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 <h3 class="stat-title">Total Premises Entries</h3>
                 <p class="stat-description">All people entering today</p>
             </div>
-            
+
             <div class="stat-card stat-card-secondary">
                 <div class="stat-icon">
                     <i class="bi bi-building"></i>
@@ -514,7 +527,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 <h3 class="stat-title">Office Visitors</h3>
                 <p class="stat-description">Registered at reception</p>
             </div>
-            
+
             <div class="stat-card stat-card-tertiary">
                 <div class="stat-icon">
                     <i class="bi bi-people"></i>
@@ -524,7 +537,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 <p class="stat-description">Hotel guests, staff, delivery</p>
             </div>
         </div>
-        
+
         <!-- Recent Entries Table -->
         <div class="data-table-card">
             <div class="table-header">
@@ -545,8 +558,8 @@ while ($row = $weekly_result->fetch_assoc()) {
                     </thead>
                     <tbody>
                         <?php foreach ($weekly_data as $day): ?>
-                            <?php 
-                                $daily_hotel_other = max(0, $day['total_entries'] - $day['office_visitors']);
+                            <?php
+                            $daily_hotel_other = max(0, $day['total_entries'] - $day['office_visitors']);
                             ?>
                             <tr>
                                 <td><?= date('M j, Y', strtotime($day['date'])) ?></td>
@@ -559,7 +572,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </table>
             </div>
         </div>
-        
+
         <!-- Quick Actions -->
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
@@ -587,7 +600,7 @@ while ($row = $weekly_result->fetch_assoc()) {
         let refreshTimer = setInterval(() => {
             // Add loading state
             document.body.classList.add('loading-pulse');
-            
+
             setTimeout(() => {
                 window.location.reload();
             }, 500);
@@ -647,4 +660,5 @@ while ($row = $weekly_result->fetch_assoc()) {
         setTimeout(animateNumbers, 500);
     </script>
 </body>
+
 </html>

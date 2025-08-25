@@ -2,14 +2,12 @@
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Include PHPMailer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+
 require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
@@ -101,6 +99,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -116,25 +115,25 @@ $conn->close();
             --light-bg: #f8f9fa;
             --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
-        
+
         body {
             background-color: var(--light-bg);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: #333;
             line-height: 1.6;
         }
-        
+
         .navbar-brand {
             font-weight: 600;
             color: var(--primary-dark) !important;
         }
-        
+
         .container {
             max-width: 900px;
             margin-top: 40px;
             margin-bottom: 80px;
         }
-        
+
         .form-card {
             background: white;
             border-radius: 12px;
@@ -143,7 +142,7 @@ $conn->close();
             box-shadow: var(--card-shadow);
             border-top: 4px solid var(--primary);
         }
-        
+
         .form-title {
             color: var(--primary-dark);
             font-weight: 600;
@@ -151,7 +150,7 @@ $conn->close();
             position: relative;
             padding-bottom: 10px;
         }
-        
+
         .form-title:after {
             content: '';
             position: absolute;
@@ -161,25 +160,27 @@ $conn->close();
             height: 3px;
             background: var(--accent);
         }
-        
+
         .form-label {
             font-weight: 500;
             color: #555;
             margin-bottom: 8px;
         }
-        
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             padding: 12px 15px;
             border-radius: 8px;
             border: 1px solid #ddd;
             transition: all 0.3s;
         }
-        
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 0.25rem rgba(7, 175, 139, 0.15);
         }
-        
+
         .btn-primary {
             background-color: var(--primary);
             border: none;
@@ -189,12 +190,12 @@ $conn->close();
             letter-spacing: 0.5px;
             transition: all 0.3s;
         }
-        
+
         .btn-primary:hover {
             background-color: var(--primary-dark);
             transform: translateY(-2px);
         }
-        
+
         .btn-outline {
             border: 2px solid var(--primary);
             color: var(--primary);
@@ -204,12 +205,12 @@ $conn->close();
             font-weight: 500;
             transition: all 0.3s;
         }
-        
+
         .btn-outline:hover {
             background-color: var(--primary);
             color: white;
         }
-        
+
         .visitor-badge {
             background-color: var(--accent);
             color: #333;
@@ -220,30 +221,31 @@ $conn->close();
             margin-bottom: 15px;
             font-size: 0.85rem;
         }
-        
+
         .success-modal .modal-header {
             background-color: var(--primary);
             color: white;
         }
-        
+
         .success-icon {
             color: var(--primary);
             font-size: 3rem;
             margin-bottom: 20px;
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 margin-top: 20px;
                 padding: 0 15px;
             }
-            
+
             .form-card {
                 padding: 20px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="row justify-content-center">
@@ -323,7 +325,7 @@ $conn->close();
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mt-4">
                         <button type="button" class="btn btn-outline" onclick="addGuestForm()">
                             <i class="bi bi-plus-circle me-2"></i>Add Another Visitor
@@ -340,11 +342,11 @@ $conn->close();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let guestCount = 1;
-        
+
         function addGuestForm() {
             const container = document.getElementById('guest-forms');
             const index = guestCount++;
-            
+
             const formHTML = `
                 <div class="form-card mt-4">
                     <div class="d-flex justify-content-between align-items-center">
@@ -411,13 +413,17 @@ $conn->close();
                         </div>
                     </div>
                 </div>`;
-            
+
             container.insertAdjacentHTML('beforeend', formHTML);
-            
+
             // Smooth scroll to the new form
             const newForm = container.lastElementChild;
-            newForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            newForm.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
         }
     </script>
 </body>
+
 </html>

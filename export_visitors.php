@@ -7,10 +7,7 @@ if (!isset($_SESSION['receptionist_id'])) {
 }
 
 // DB Connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Get date range from request
 $start_date = $_GET['start_date'] ?? date('Y-m-d');
@@ -46,8 +43,8 @@ $visitors = $result->fetch_all(MYSQLI_ASSOC);
 if ($format === 'excel') {
     // Export as Excel
     header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="visitors_'.date('Y-m-d').'.xls"');
-    
+    header('Content-Disposition: attachment; filename="visitors_' . date('Y-m-d') . '.xls"');
+
     echo "<table border='1'>";
     echo "<tr>
             <th>Visitor Name</th>
@@ -62,38 +59,47 @@ if ($format === 'excel') {
             <th>Visit Date</th>
             <th>Status</th>
           </tr>";
-    
+
     foreach ($visitors as $visitor) {
         echo "<tr>";
-        echo "<td>".htmlspecialchars($visitor['name'])."</td>";
-        echo "<td>".htmlspecialchars($visitor['organization'])."</td>";
-        echo "<td>".htmlspecialchars($visitor['reason'] ?? 'N/A')."</td>";
-        echo "<td>".htmlspecialchars($visitor['check_in_time'] ?? 'N/A')."</td>";
-        echo "<td>".htmlspecialchars($visitor['check_out_time'] ?? 'N/A')."</td>";
-        echo "<td>".htmlspecialchars($visitor['host_name'])."</td>";
-        echo "<td>".htmlspecialchars($visitor['floor_of_visit'] ?? 'N/A')."</td>";
-        echo "<td>".htmlspecialchars($visitor['phone'])."</td>";
-        echo "<td>".htmlspecialchars($visitor['email'])."</td>";
-        
-        echo "<td>".htmlspecialchars($visitor['visit_date'])."</td>";
-        echo "<td>".htmlspecialchars($visitor['status'])."</td>";
+        echo "<td>" . htmlspecialchars($visitor['name']) . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['organization']) . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['reason'] ?? 'N/A') . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['check_in_time'] ?? 'N/A') . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['check_out_time'] ?? 'N/A') . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['host_name']) . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['floor_of_visit'] ?? 'N/A') . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['phone']) . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['email']) . "</td>";
+
+        echo "<td>" . htmlspecialchars($visitor['visit_date']) . "</td>";
+        echo "<td>" . htmlspecialchars($visitor['status']) . "</td>";
         echo "</tr>";
     }
-    
+
     echo "</table>";
 } else {
     // Export as CSV (default)
     header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="visitors_'.date('Y-m-d').'.csv"');
-    
+    header('Content-Disposition: attachment; filename="visitors_' . date('Y-m-d') . '.csv"');
+
     $output = fopen('php://output', 'w');
-    
+
     // Write headers
     fputcsv($output, array(
-        'Name', 'Company Name', 'Visit Purpose', 'In', 'Out', 'Host Name',
-        'Floor/Venue', 'Phone', 'Email', 'Visit Date', 'Status'
+        'Name',
+        'Company Name',
+        'Visit Purpose',
+        'In',
+        'Out',
+        'Host Name',
+        'Floor/Venue',
+        'Phone',
+        'Email',
+        'Visit Date',
+        'Status'
     ));
-    
+
     // Write data
     foreach ($visitors as $visitor) {
         fputcsv($output, array(
@@ -110,9 +116,8 @@ if ($format === 'excel') {
             $visitor['status']
         ));
     }
-    
+
     fclose($output);
 }
 
 exit();
-?>

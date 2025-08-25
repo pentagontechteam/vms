@@ -1,6 +1,6 @@
 <?php
 // premises_dashboard.php - Management overview
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 $today = date('Y-m-d');
 
 // Get today's summary
@@ -38,6 +38,7 @@ while ($row = $weekly_result->fetch_assoc()) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,15 +50,18 @@ while ($row = $weekly_result->fetch_assoc()) {
         .stat-card {
             transition: transform 0.2s;
         }
+
         .stat-card:hover {
             transform: translateY(-5px);
         }
+
         .chart-container {
             position: relative;
             height: 300px;
         }
     </style>
 </head>
+
 <body class="bg-light">
     <div class="container mt-4">
         <!-- Header -->
@@ -72,7 +76,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </button>
             </div>
         </div>
-        
+
         <!-- Today's Summary Cards -->
         <div class="row mb-4">
             <!-- Total Premises Entries -->
@@ -86,7 +90,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Office Visitors -->
             <div class="col-md-4">
                 <div class="card bg-success text-white stat-card shadow">
@@ -98,7 +102,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Hotel & Other Traffic -->
             <div class="col-md-4">
                 <div class="card bg-info text-white stat-card shadow">
@@ -111,7 +115,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </div>
             </div>
         </div>
-        
+
         <!-- Charts Row -->
         <div class="row mb-4">
             <!-- Traffic Breakdown Pie Chart -->
@@ -127,7 +131,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Weekly Trend Line Chart -->
             <div class="col-md-6">
                 <div class="card shadow">
@@ -142,7 +146,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </div>
             </div>
         </div>
-        
+
         <!-- Quick Actions and Recent Activity -->
         <div class="row">
             <!-- Quick Actions -->
@@ -165,7 +169,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Statistics Summary -->
             <div class="col-md-6">
                 <div class="card shadow">
@@ -197,7 +201,7 @@ while ($row = $weekly_result->fetch_assoc()) {
                 </div>
             </div>
         </div>
-        
+
         <!-- Recent Entries Table -->
         <div class="row mt-4">
             <div class="col-12">
@@ -219,9 +223,9 @@ while ($row = $weekly_result->fetch_assoc()) {
                                 </thead>
                                 <tbody>
                                     <?php foreach ($weekly_data as $day): ?>
-                                        <?php 
-                                            $daily_hotel_other = max(0, $day['total_entries'] - $day['office_visitors']);
-                                            $daily_rate = $day['total_entries'] > 0 ? round(($day['office_visitors'] / $day['total_entries']) * 100, 1) : 0;
+                                        <?php
+                                        $daily_hotel_other = max(0, $day['total_entries'] - $day['office_visitors']);
+                                        $daily_rate = $day['total_entries'] > 0 ? round(($day['office_visitors'] / $day['total_entries']) * 100, 1) : 0;
                                         ?>
                                         <tr>
                                             <td><?= date('M j, Y', strtotime($day['date'])) ?></td>
@@ -268,16 +272,18 @@ while ($row = $weekly_result->fetch_assoc()) {
         // Weekly Trend Line Chart
         const trendCtx = document.getElementById('trendChart').getContext('2d');
         const weeklyData = <?= json_encode(array_reverse($weekly_data)) ?>;
-        
+
         new Chart(trendCtx, {
             type: 'line',
             data: {
                 labels: weeklyData.map(day => {
                     const date = new Date(day.date);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    return date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
                 }),
-                datasets: [
-                    {
+                datasets: [{
                         label: 'Total Entries',
                         data: weeklyData.map(day => day.total_entries),
                         borderColor: '#007bff',
@@ -315,4 +321,5 @@ while ($row = $weekly_result->fetch_assoc()) {
         }, 300000);
     </script>
 </body>
+
 </html>

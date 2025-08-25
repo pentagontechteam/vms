@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+require 'db_connection.php';
 
 $query = "SELECT id, name FROM visitors WHERE status = 'approved' ORDER BY 'name' ASC";
 $result = mysqli_query($conn, $query);

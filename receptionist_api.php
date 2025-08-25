@@ -55,12 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $conn->connect_error]);
-    exit();
-}
+require 'db_connection.php';
 
 // Set charset to prevent encoding issues
 $conn->set_charset("utf8");

@@ -1,6 +1,6 @@
 <?php
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 
 // Check connection
 if ($conn->connect_error) {
@@ -256,4 +256,3 @@ if (isset($_GET['qr_code'])) {
 
 // Close database connection
 $conn->close();
-?>

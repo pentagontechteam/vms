@@ -6,7 +6,7 @@ session_start();
 
 // Load configuration and database
 require_once __DIR__ . '/../../../includes/config.php';
-require_once __DIR__ . '/../../../includes/db.php';
+require_once __DIR__ . '/../../../includes/db_connection.php';
 
 // Include auth functions
 require_once __DIR__ . '/../../../includes/auth.php';
@@ -21,19 +21,19 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
-    
+
     if (empty($email) || empty($password)) {
         $error = "Both email and password are required.";
     } else {
         $user = authenticate_user($email, $password);
-        
+
         if ($user) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['first_name'] = $user['first_name'];
             $_SESSION['last_name'] = $user['last_name'];
             $_SESSION['role'] = $user['role'];
-            
+
             header("Location: ../dashboard/" . $user['role'] . ".php");
             exit();
         } else {
@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,28 +60,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             background-color: #fff;
         }
+
         .bank-logo {
             text-align: center;
             margin-bottom: 2rem;
         }
+
         .bank-logo img {
             max-height: 60px;
         }
+
         .form-control:focus {
             border-color: #0056b3;
             box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.1);
         }
+
         .btn-primary {
             background-color: #0056b3;
             border-color: #0056b3;
             padding: 0.5rem 1.5rem;
         }
+
         .error-message {
             color: #dc3545;
             font-size: 0.875rem;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="login-container">
@@ -88,24 +95,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img src="/assets/images/logo.png" alt="International Bank Logo">
             </div>
             <h2 class="text-center mb-4">Secure Access Portal</h2>
-            
+
             <?php if ($error): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <?php echo htmlspecialchars($error); ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>
-            
+
             <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="POST">
                 <div class="mb-3">
                     <label for="email" class="form-label">Corporate Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required 
-                           placeholder="Enter your registered email address">
+                    <input type="email" class="form-control" id="email" name="email" required
+                        placeholder="Enter your registered email address">
                 </div>
                 <div class="mb-4">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" required 
-                           placeholder="Enter your password">
+                    <input type="password" class="form-control" id="password" name="password" required
+                        placeholder="Enter your password">
                 </div>
                 <div class="d-grid mb-3">
                     <button type="submit" class="btn btn-primary">Sign In</button>
@@ -141,4 +148,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/assets/js/form-validation.js"></script>
 </body>
+
 </html>

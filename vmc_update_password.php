@@ -2,15 +2,12 @@
 session_start();
 
 // DB Connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['receptionist_id'])) {
-    header("Location: vmc_login.php");
-    exit();
+  header("Location: vmc_login.php");
+  exit();
 }
 
 // Initialize variables
@@ -19,52 +16,53 @@ $success = '';
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $new_password = $_POST['new_password'];
-    $confirm_password = $_POST['confirm_password'];
+  $new_password = $_POST['new_password'];
+  $confirm_password = $_POST['confirm_password'];
 
-    // Validate password
-    if ($new_password !== $confirm_password) {
-        $error = "New passwords don't match";
-    } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^()_+\-=])[A-Za-z\d@$!%*#?&^()_+\-=]{8,}$/', $new_password)) {
-        $error = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
-    }
+  // Validate password
+  if ($new_password !== $confirm_password) {
+    $error = "New passwords don't match";
+  } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^()_+\-=])[A-Za-z\d@$!%*#?&^()_+\-=]{8,}$/', $new_password)) {
+    $error = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
+  }
 
-    if (empty($error)) {
-        try {
-            // Hash the new password
-            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-            $receptionist_id = $_SESSION['receptionist_id'];
-            
-            // Update password and set profile as completed - ALSO FETCH ROLE
-            $stmt = $conn->prepare("UPDATE receptionists SET password = ?, profile_completed = 1 WHERE id = ?");
-            $stmt->bind_param("si", $hashed_password, $receptionist_id);
-            
-            if ($stmt->execute()) {
-                // FETCH ROLE AND STORE IN SESSION
-                $stmt_role = $conn->prepare("SELECT role FROM receptionists WHERE id = ?");
-                $stmt_role->bind_param("i", $receptionist_id);
-                $stmt_role->execute();
-                $stmt_role->bind_result($role);
-                $stmt_role->fetch();
-                $_SESSION['receptionist_role'] = $role;
-                $stmt_role->close();
-                
-                $success = "Password updated successfully!";
-                header("Refresh: 2; url=vmc_dashboard.php");
-            } else {
-                $error = "Error updating password: " . $conn->error;
-            }
-            
-            $stmt->close();
-        } catch (Exception $e) {
-            $error = "Database error: " . $e->getMessage();
-        }
+  if (empty($error)) {
+    try {
+      // Hash the new password
+      $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+      $receptionist_id = $_SESSION['receptionist_id'];
+
+      // Update password and set profile as completed - ALSO FETCH ROLE
+      $stmt = $conn->prepare("UPDATE receptionists SET password = ?, profile_completed = 1 WHERE id = ?");
+      $stmt->bind_param("si", $hashed_password, $receptionist_id);
+
+      if ($stmt->execute()) {
+        // FETCH ROLE AND STORE IN SESSION
+        $stmt_role = $conn->prepare("SELECT role FROM receptionists WHERE id = ?");
+        $stmt_role->bind_param("i", $receptionist_id);
+        $stmt_role->execute();
+        $stmt_role->bind_result($role);
+        $stmt_role->fetch();
+        $_SESSION['receptionist_role'] = $role;
+        $stmt_role->close();
+
+        $success = "Password updated successfully!";
+        header("Refresh: 2; url=vmc_dashboard.php");
+      } else {
+        $error = "Error updating password: " . $conn->error;
+      }
+
+      $stmt->close();
+    } catch (Exception $e) {
+      $error = "Database error: " . $e->getMessage();
     }
+  }
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -186,23 +184,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
   </style>
 </head>
+
 <body>
   <div class="password-container">
     <div class="logo">
       <img src="assets/logo-green-yellow.png" alt="Company Logo">
     </div>
-    
+
     <h1>Update Your Password</h1>
     <p style="text-align: center; margin-bottom: 1.5rem; color: #666;">Please set a new secure password</p>
-    
+
     <?php if (!empty($error)): ?>
       <div class="alert alert-danger"><?= $error ?></div>
     <?php endif; ?>
-    
+
     <?php if (!empty($success)): ?>
       <div class="alert alert-success"><?= $success ?></div>
     <?php endif; ?>
-    
+
     <form method="POST">
       <div class="form-group">
         <label for="new_password">New Password</label>
@@ -210,13 +209,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <i class="fas fa-eye password-toggle" onclick="togglePassword('new_password')"></i>
         <small class="text-muted">Must be at least 8 characters with uppercase, lowercase, number, and special character</small>
       </div>
-      
+
       <div class="form-group">
         <label for="confirm_password">Confirm New Password</label>
         <input type="password" id="confirm_password" name="confirm_password" required>
         <i class="fas fa-eye password-toggle" onclick="togglePassword('confirm_password')"></i>
       </div>
-      
+
       <button type="submit" class="btn-update">Update Password</button>
     </form>
   </div>
@@ -225,7 +224,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     function togglePassword(id) {
       const input = document.getElementById(id);
       const icon = input.nextElementSibling;
-      
+
       if (input.type === "password") {
         input.type = "text";
         icon.classList.remove("fa-eye");
@@ -255,4 +254,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     });
   </script>
 </body>
+
 </html>

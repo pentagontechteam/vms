@@ -7,109 +7,110 @@ error_reporting(E_ALL);
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 
 // Check the connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+  die("Connection failed: " . $conn->connect_error);
 }
 
 // Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $login_input = $_POST['login_input']; // This accepts both email and username
-    $password = $_POST['password'];
-    
-    $login_successful = false;
-    
-    // 1. First, check CSO table (email only)
-    $stmt = $conn->prepare("SELECT id, email, password_hash FROM cso WHERE email=?");
+  $login_input = $_POST['login_input']; // This accepts both email and username
+  $password = $_POST['password'];
+
+  $login_successful = false;
+
+  // 1. First, check CSO table (email only)
+  $stmt = $conn->prepare("SELECT id, email, password_hash FROM cso WHERE email=?");
+  $stmt->bind_param("s", $login_input);
+  $stmt->execute();
+  $stmt->store_result();
+
+  if ($stmt->num_rows > 0) {
+    $stmt->bind_result($id, $email, $password_hash);
+    $stmt->fetch();
+
+    if (password_verify($password, $password_hash)) {
+      $_SESSION['cso_id'] = $id;
+      $_SESSION['user_type'] = 'cso';
+      $login_successful = true;
+      $redirect_url = "cso_dashboard.php";
+    }
+  }
+  $stmt->close();
+
+  // 2. If not found in CSO, check employees table (email only)
+  if (!$login_successful) {
+    $stmt = $conn->prepare("SELECT id, name, email, password, profile_completed FROM employees WHERE email=?");
     $stmt->bind_param("s", $login_input);
     $stmt->execute();
     $stmt->store_result();
-    
+
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $email, $password_hash);
-        $stmt->fetch();
-        
-        if (password_verify($password, $password_hash)) {
-            $_SESSION['cso_id'] = $id;
-            $_SESSION['user_type'] = 'cso';
-            $login_successful = true;
-            $redirect_url = "cso_dashboard.php";
+      $stmt->bind_result($id, $name, $email, $hashed_password, $profile_completed);
+      $stmt->fetch();
+
+      if (password_verify($password, $hashed_password)) {
+        $_SESSION['employee_id'] = $id;
+        $_SESSION['name'] = $name;
+        $_SESSION['user_type'] = 'employee';
+        $login_successful = true;
+
+        // Check if profile needs completion
+        if ($profile_completed == 0) {
+          $redirect_url = "update_profile.php";
+        } else {
+          $redirect_url = "staff_dashboard.php";
         }
+      }
     }
     $stmt->close();
-    
-    // 2. If not found in CSO, check employees table (email only)
-    if (!$login_successful) {
-        $stmt = $conn->prepare("SELECT id, name, email, password, profile_completed FROM employees WHERE email=?");
-        $stmt->bind_param("s", $login_input);
-        $stmt->execute();
-        $stmt->store_result();
-        
-        if ($stmt->num_rows > 0) {
-            $stmt->bind_result($id, $name, $email, $hashed_password, $profile_completed);
-            $stmt->fetch();
-            
-            if (password_verify($password, $hashed_password)) {
-                $_SESSION['employee_id'] = $id;
-                $_SESSION['name'] = $name;
-                $_SESSION['user_type'] = 'employee';
-                $login_successful = true;
-                
-                // Check if profile needs completion
-                if ($profile_completed == 0) {
-                    $redirect_url = "update_profile.php";
-                } else {
-                    $redirect_url = "staff_dashboard.php";
-                }
-            }
-        }
-        $stmt->close();
+  }
+
+  // 3. If not found in employees, check receptionists table (username only)
+  if (!$login_successful) {
+    $stmt = $conn->prepare("SELECT id, name, username, password, role FROM receptionists WHERE username=?");
+    $stmt->bind_param("s", $login_input);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+      $stmt->bind_result($id, $name, $username, $hashed_password, $role);
+      $stmt->fetch();
+
+      if (password_verify($password, $hashed_password)) {
+        $_SESSION['receptionist_id'] = $id;
+        $_SESSION['receptionist_name'] = $name;
+        $_SESSION['receptionist_role'] = $role;
+        $_SESSION['user_type'] = 'receptionist';
+        $login_successful = true;
+        $redirect_url = "vmc_dashboard.php";
+      }
     }
-    
-    // 3. If not found in employees, check receptionists table (username only)
-    if (!$login_successful) {
-        $stmt = $conn->prepare("SELECT id, name, username, password, role FROM receptionists WHERE username=?");
-        $stmt->bind_param("s", $login_input);
-        $stmt->execute();
-        $stmt->store_result();
-        
-        if ($stmt->num_rows > 0) {
-            $stmt->bind_result($id, $name, $username, $hashed_password, $role);
-            $stmt->fetch();
-            
-            if (password_verify($password, $hashed_password)) {
-                $_SESSION['receptionist_id'] = $id;
-                $_SESSION['receptionist_name'] = $name;
-                $_SESSION['receptionist_role'] = $role;
-                $_SESSION['user_type'] = 'receptionist';
-                $login_successful = true;
-                $redirect_url = "vmc_dashboard.php";
-            }
-        }
-        $stmt->close();
-    }
-    
-    // Redirect based on login result
-    if ($login_successful) {
-        header("Location: " . $redirect_url);
-        exit();
-    } else {
-        header("Location: unified_login.php?error=1");
-        exit();
-    }
+    $stmt->close();
+  }
+
+  // Redirect based on login result
+  if ($login_successful) {
+    header("Location: " . $redirect_url);
+    exit();
+  } else {
+    header("Location: unified_login.php?error=1");
+    exit();
+  }
 }
 $conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Abuja-AATC Visitor Management Portal</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <style>
@@ -126,7 +127,8 @@ $conn->close();
       box-sizing: border-box;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-light);
@@ -153,7 +155,9 @@ $conn->close();
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .container {
@@ -211,6 +215,7 @@ $conn->close();
         transform: translate(-50%, -60%);
         opacity: 0;
       }
+
       to {
         transform: translate(-50%, -50%);
         opacity: 1;
@@ -243,6 +248,7 @@ $conn->close();
         opacity: 0;
         transform: translateY(20px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -373,7 +379,7 @@ $conn->close();
         max-width: 90%;
       }
     }
-    
+
     #toast {
       visibility: hidden;
       min-width: 250px;
@@ -398,8 +404,9 @@ $conn->close();
     }
   </style>
 </head>
+
 <body>
-    
+
   <!-- Page Loader -->
   <div id="loader">
     <div class="spinner"></div>
@@ -407,22 +414,22 @@ $conn->close();
 
   <div class="container" style="display: none;" id="main-content">
     <div class="left-side">
-        <div class="overlay-text">
-          <h1>Abuja-AATC</h1>
-          <h2>Visitor Management Portal</h2>
-        </div>
+      <div class="overlay-text">
+        <h1>Abuja-AATC</h1>
+        <h2>Visitor Management Portal</h2>
       </div>
-      
+    </div>
+
 
     <div class="right-side">
-    <div id="toast">Invalid credentials.</div>
+      <div id="toast">Invalid credentials.</div>
       <div class="login-wrapper">
         <div class="logo">
           <a href="unified_login.php">
             <img src="assets/logo-green-yellow.png" alt="Company Logo" />
           </a>
         </div>
-        
+
         <h2>Login</h2>
 
         <form method="POST" action="unified_login.php">
@@ -450,11 +457,11 @@ $conn->close();
 
   <!-- Fade-in after load -->
   <script>
-    window.addEventListener("load", function () {
+    window.addEventListener("load", function() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("main-content").style.display = "flex";
     });
-    
+
     // Check if credentials error
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "1") {
@@ -468,4 +475,5 @@ $conn->close();
   </script>
 
 </body>
+
 </html>

@@ -6,27 +6,24 @@ if (!isset($_SESSION['receptionist_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Get group statistics for dashboard
 function getGroupStatistics($conn) {
     $today = date('Y-m-d');
-    
+
     // Total groups today
     $total_groups_today = $conn->query("SELECT COUNT(DISTINCT group_id) as count 
                                       FROM visitors 
                                       WHERE group_id IS NOT NULL 
                                       AND DATE(visit_date) = '$today'")->fetch_assoc()['count'];
-    
+
     // Active groups (checked in)
     $active_groups = $conn->query("SELECT COUNT(DISTINCT group_id) as count 
                                  FROM visitors 
                                  WHERE group_id IS NOT NULL 
                                  AND status = 'checked_in'")->fetch_assoc()['count'];
-    
+
     // Average group size today
     $avg_group_size = $conn->query("SELECT AVG(group_size) as avg_size FROM (
                                    SELECT group_id, COUNT(*) as group_size 
@@ -35,7 +32,7 @@ function getGroupStatistics($conn) {
                                    AND DATE(visit_date) = '$today'
                                    GROUP BY group_id
                                    ) as group_sizes")->fetch_assoc()['avg_size'];
-    
+
     // Largest group today
     $largest_group = $conn->query("SELECT group_id, COUNT(*) as size 
                                  FROM visitors 
@@ -44,7 +41,7 @@ function getGroupStatistics($conn) {
                                  GROUP BY group_id 
                                  ORDER BY size DESC 
                                  LIMIT 1")->fetch_assoc();
-    
+
     return [
         'total_groups_today' => $total_groups_today,
         'active_groups' => $active_groups,

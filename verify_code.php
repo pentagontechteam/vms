@@ -1,11 +1,7 @@
 <?php
 header('Content-Type: application/json'); // set JSON response ([php.net](https://www.php.net/manual/en/function.header.php?utm_source=chatgpt.com))
 
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    echo json_encode(['status' => 'ERROR', 'message' => 'Database connection failed']);
-    exit;
-}
+require 'db_connection.php';
 
 if (empty($_POST['unique_code'])) {
     echo json_encode(['status' => 'ERROR', 'message' => 'No code provided']);

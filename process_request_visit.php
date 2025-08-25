@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db_connection.php'; // Your DB config
+require_once 'db_connection.php';
 
 if (!isset($_SESSION['receptionist_id'])) {
     header("Location: vmc_login.php");
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($stmt->execute()) {
         $request_id = $conn->insert_id;
         $_SESSION['success'] = "Visit request submitted! CSO will review it shortly.";
-        
+
         // Notify CSO (via email/dashboard notification)
         header("Location: notify_cso.php?request_id=$request_id");
         exit();
@@ -39,4 +39,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     header("Location: vmc_dashboard.php");
     exit();
 }
-?>

@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+require 'db_connection.php';
 
 $name = isset($_GET['name']) ? mysqli_real_escape_string($conn, $_GET['name']) : '';
 

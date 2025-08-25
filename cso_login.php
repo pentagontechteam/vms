@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 // $conn = new mysqli(hostname:"localhost", username:"root", password:"", database:"visitor_db");
 
 // Database connection remote
- $conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 
 // Check the connection
 if ($conn->connect_error) {
@@ -28,11 +28,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
-    
+
     if ($stmt->num_rows > 0) {
         $stmt->bind_result($id, $password_hash);
         $stmt->fetch();
-        
+
         if (password_verify($password, $password_hash)) {
             session_start();
             $_SESSION['cso_id'] = $id; // Store CSO ID in session
@@ -50,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -184,30 +185,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     </style>
 </head>
+
 <body>
 
-<div class="login-container">
-    <h2>Security Manager Login</h2>
+    <div class="login-container">
+        <h2>Security Manager Login</h2>
 
-    <?php if (!empty($error)): ?>
-        <div class="message error"><?php echo $error; ?></div>
-    <?php endif; ?>
+        <?php if (!empty($error)): ?>
+            <div class="message error"><?php echo $error; ?></div>
+        <?php endif; ?>
 
-    <form method="POST" action="cso_login.php">
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required placeholder="Enter your email">
-        </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required placeholder="Enter your password">
-        </div>
-        <div class="forgot-password">
-            <a href="password_reset.html">Forgot password?</a>
-        </div>
-        <button type="submit" class="login-btn">Login</button>
-    </form>
-</div>
+        <form method="POST" action="cso_login.php">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            <div class="forgot-password">
+                <a href="password_reset.html">Forgot password?</a>
+            </div>
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+    </div>
 
 </body>
+
 </html>

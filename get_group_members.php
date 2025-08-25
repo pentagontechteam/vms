@@ -8,15 +8,11 @@ if (!isset($_SESSION['receptionist_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    echo json_encode(['error' => 'Database connection failed']);
-    exit();
-}
+require 'db_connection.php';
 
 if (isset($_GET['group_id'])) {
     $group_id = $conn->real_escape_string($_GET['group_id']);
-    
+
     $stmt = $conn->prepare("SELECT id, name, phone, email, status, is_group_leader, check_in_time, check_out_time 
                           FROM visitors 
                           WHERE group_id = ? 
@@ -24,12 +20,12 @@ if (isset($_GET['group_id'])) {
     $stmt->bind_param("s", $group_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $members = [];
     while ($row = $result->fetch_assoc()) {
         $members[] = $row;
     }
-    
+
     echo json_encode(['members' => $members]);
     $stmt->close();
 } else {
@@ -37,4 +33,3 @@ if (isset($_GET['group_id'])) {
 }
 
 $conn->close();
-?>

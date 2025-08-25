@@ -7,10 +7,8 @@ require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die(json_encode(['success' => false, 'message' => 'Database connection failed']));
-}
+require 'db_connection.php';
+
 ader('Contee: application/json
 // Improved email function using PHPMailer
 function sendEmailNotification($to, $toName, $subject, $message) {

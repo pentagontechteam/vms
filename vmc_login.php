@@ -3,10 +3,7 @@ session_start();
 $error_message = "";
 
 // DB Connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
@@ -25,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['receptionist_id'] = $rec_id;
         $_SESSION['receptionist_name'] = $rec_name;
         $_SESSION['receptionist_role'] = $role; // ADDED role to session
-        
+
         // Redirect based on profile completion status
         if ($profile_completed == 0) {
             header("Location: vmc_update_password.php");
@@ -44,6 +41,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +56,7 @@ $conn->close();
             --dark: #007570;
             --light: #f8f9fa;
         }
-        
+
         body {
             background: linear-gradient(135deg, #e6f7f4, #d1f2eb);
             font-family: 'Segoe UI', 'Roboto', sans-serif;
@@ -69,7 +67,7 @@ $conn->close();
             margin: 0;
             padding: 20px;
         }
-        
+
         .login-container {
             max-width: 420px;
             width: 100%;
@@ -79,37 +77,37 @@ $conn->close();
             box-shadow: 0 10px 30px rgba(0, 117, 112, 0.15);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
+
         .login-container:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0, 117, 112, 0.2);
         }
-        
+
         .logo {
             width: 180px;
             margin: 0 auto 1.5rem;
             display: block;
         }
-        
+
         h2 {
             text-align: center;
             color: var(--dark);
             margin-bottom: 1.8rem;
             font-weight: 600;
         }
-        
+
         .form-control {
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             padding: 12px 15px;
             transition: all 0.3s;
         }
-        
+
         .form-control:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(7, 175, 139, 0.2);
         }
-        
+
         .btn-login {
             background: var(--primary);
             color: white;
@@ -121,16 +119,16 @@ $conn->close();
             transition: all 0.3s;
             width: 100%;
         }
-        
+
         .btn-login:hover {
             background: var(--dark);
             transform: translateY(-2px);
         }
-        
+
         .btn-login:active {
             transform: translateY(0);
         }
-        
+
         .alert-custom {
             background: #ff4757;
             color: white;
@@ -140,12 +138,19 @@ $conn->close();
             margin-bottom: 20px;
             animation: fadeIn 0.5s;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .input-group-text {
             background: var(--light);
             border: 2px solid #e0e0e0;
@@ -153,6 +158,7 @@ $conn->close();
         }
     </style>
 </head>
+
 <body>
     <div class="login-container animate__animated animate__fadeIn">
         <img src="assets/logo-green-yellow.png" alt="VMC Logo" class="logo">
@@ -177,4 +183,5 @@ $conn->close();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

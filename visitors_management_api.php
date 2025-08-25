@@ -2,10 +2,7 @@
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die(json_encode(['error' => 'Connection failed: ' . $conn->connect_error]));
-}
+require 'db_connection.php';
 
 // Set timezone
 date_default_timezone_set('Africa/Lagos');
@@ -53,16 +50,16 @@ try {
 
 function getVisitors() {
     global $conn;
-    
+
     $page = (int)($_GET['page'] ?? 1);
     $limit = 10;
     $offset = ($page - 1) * $limit;
-    
+
     // Build WHERE clause based on filters
     $whereConditions = [];
     $params = [];
     $types = '';
-    
+
     // Search filter
     if (!empty($_GET['search'])) {
         $whereConditions[] = "(name LIKE ? OR email LIKE ? OR organization LIKE ? OR host_name LIKE ?)";
@@ -70,30 +67,30 @@ function getVisitors() {
         $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         $types .= 'ssss';
     }
-    
+
     // Status filter
     if (!empty($_GET['status'])) {
         $whereConditions[] = "status = ?";
         $params[] = $_GET['status'];
         $types .= 's';
     }
-    
+
     // Host filter
     if (!empty($_GET['host'])) {
         $whereConditions[] = "host_name = ?";
         $params[] = $_GET['host'];
         $types .= 's';
     }
-    
+
     // Date filter
     if (!empty($_GET['date'])) {
         $whereConditions[] = "DATE(check_in_time) = ?";
         $params[] = $_GET['date'];
         $types .= 's';
     }
-    
+
     $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-    
+
     // Get total count
     $countQuery = "SELECT COUNT(*) as total FROM visitors $whereClause";
     $countStmt = $conn->prepare($countQuery);
@@ -103,7 +100,7 @@ function getVisitors() {
     $countStmt->execute();
     $totalRecords = $countStmt->get_result()->fetch_assoc()['total'];
     $countStmt->close();
-    
+
     // Get visitors data
     $query = "SELECT id, name, email, phone, organization, host_name, status, visit_date, 
                      check_in_time, check_out_time, floor_of_visit, reason, created_at
@@ -111,30 +108,30 @@ function getVisitors() {
               $whereClause 
               ORDER BY created_at DESC 
               LIMIT ? OFFSET ?";
-    
+
     $stmt = $conn->prepare($query);
     $params[] = $limit;
     $params[] = $offset;
     $types .= 'ii';
-    
+
     if (!empty($params)) {
         $stmt->bind_param($types, ...$params);
     }
-    
+
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $visitors = [];
     while ($row = $result->fetch_assoc()) {
         $visitors[] = $row;
     }
     $stmt->close();
-    
+
     // Calculate pagination
     $totalPages = ceil($totalRecords / $limit);
     $showingStart = $totalRecords > 0 ? $offset + 1 : 0;
     $showingEnd = min($offset + $limit, $totalRecords);
-    
+
     echo json_encode([
         'visitors' => $visitors,
         'pagination' => [
@@ -152,32 +149,32 @@ function getVisitors() {
 
 function getHosts() {
     global $conn;
-    
+
     $query = "SELECT DISTINCT name FROM employees WHERE name IS NOT NULL AND name != '' ORDER BY name";
     $result = $conn->query($query);
-    
+
     $hosts = [];
     while ($row = $result->fetch_assoc()) {
         $hosts[] = $row;
     }
-    
+
     echo json_encode($hosts);
 }
 
 function deleteVisitor() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $id = (int)($input['id'] ?? 0);
-    
+
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid visitor ID']);
         return;
     }
-    
+
     $stmt = $conn->prepare("DELETE FROM visitors WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
+
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Visitor deleted successfully']);
     } else {
@@ -188,30 +185,32 @@ function deleteVisitor() {
 
 function bulkDelete() {
     global $conn;
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
     $ids = $input['ids'] ?? [];
-    
+
     if (empty($ids) || !is_array($ids)) {
         echo json_encode(['success' => false, 'message' => 'No visitors selected']);
         return;
     }
-    
+
     // Sanitize IDs
     $ids = array_map('intval', $ids);
-    $ids = array_filter($ids, function($id) { return $id > 0; });
-    
+    $ids = array_filter($ids, function ($id) {
+        return $id > 0;
+    });
+
     if (empty($ids)) {
         echo json_encode(['success' => false, 'message' => 'Invalid visitor IDs']);
         return;
     }
-    
+
     $placeholders = str_repeat('?,', count($ids) - 1) . '?';
     $query = "DELETE FROM visitors WHERE id IN ($placeholders)";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
-    
+
     if ($stmt->execute()) {
         $deletedCount = $stmt->affected_rows;
         echo json_encode(['success' => true, 'message' => "$deletedCount visitors deleted successfully"]);
@@ -223,47 +222,59 @@ function bulkDelete() {
 
 function exportVisitors() {
     global $conn;
-    
+
     $ids = $_GET['ids'] ?? '';
     if (empty($ids)) {
         echo json_encode(['error' => 'No visitors selected']);
         return;
     }
-    
+
     $ids = explode(',', $ids);
     $ids = array_map('intval', $ids);
-    $ids = array_filter($ids, function($id) { return $id > 0; });
-    
+    $ids = array_filter($ids, function ($id) {
+        return $id > 0;
+    });
+
     if (empty($ids)) {
         echo json_encode(['error' => 'Invalid visitor IDs']);
         return;
     }
-    
+
     $placeholders = str_repeat('?,', count($ids) - 1) . '?';
     $query = "SELECT name, email, phone, organization, host_name, status, visit_date, 
                      check_in_time, check_out_time, floor_of_visit, reason, created_at
               FROM visitors 
               WHERE id IN ($placeholders)
               ORDER BY created_at DESC";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     // Set headers for CSV download
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="visitors_export_' . date('Y-m-d_H-i-s') . '.csv"');
-    
+
     // Output CSV
     $output = fopen('php://output', 'w');
-    
+
     // CSV headers
     fputcsv($output, [
-        'Name', 'Email', 'Phone', 'Organization', 'Host', 'Status', 
-        'Visit Date', 'Check-In Time', 'Check-Out Time', 'Floor', 'Reason', 'Created At'
+        'Name',
+        'Email',
+        'Phone',
+        'Organization',
+        'Host',
+        'Status',
+        'Visit Date',
+        'Check-In Time',
+        'Check-Out Time',
+        'Floor',
+        'Reason',
+        'Created At'
     ]);
-    
+
     // CSV data
     while ($row = $result->fetch_assoc()) {
         fputcsv($output, [
@@ -281,43 +292,45 @@ function exportVisitors() {
             $row['created_at']
         ]);
     }
-    
+
     fclose($output);
     $stmt->close();
 }
 
 function printBadges() {
     global $conn;
-    
+
     $ids = $_GET['ids'] ?? '';
     if (empty($ids)) {
         echo json_encode(['error' => 'No visitors selected']);
         return;
     }
-    
+
     $ids = explode(',', $ids);
     $ids = array_map('intval', $ids);
-    $ids = array_filter($ids, function($id) { return $id > 0; });
-    
+    $ids = array_filter($ids, function ($id) {
+        return $id > 0;
+    });
+
     if (empty($ids)) {
         echo json_encode(['error' => 'Invalid visitor IDs']);
         return;
     }
-    
+
     $placeholders = str_repeat('?,', count($ids) - 1) . '?';
     $query = "SELECT id, name, organization, host_name, visit_date, unique_code, qr_code
               FROM visitors 
               WHERE id IN ($placeholders)
               ORDER BY name";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     // Set headers for HTML output
     header('Content-Type: text/html');
-    
+
     echo '<!DOCTYPE html>
     <html>
     <head>
@@ -347,7 +360,7 @@ function printBadges() {
         </style>
     </head>
     <body>';
-    
+
     while ($row = $result->fetch_assoc()) {
         echo '<div class="badge">
             <h2>AATC VISITOR</h2>
@@ -358,13 +371,12 @@ function printBadges() {
             <div class="code">Code: ' . htmlspecialchars($row['unique_code']) . '</div>
         </div>';
     }
-    
+
     echo '<script>window.print();</script>
     </body>
     </html>';
-    
+
     $stmt->close();
 }
 
 $conn->close();
-?>

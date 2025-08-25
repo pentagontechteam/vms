@@ -3,10 +3,7 @@ session_start();
 $error_message = "";
 
 // DB Connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
@@ -37,6 +34,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Receptionist Login</title>
@@ -51,6 +49,7 @@ $conn->close();
             height: 100vh;
             margin: 0;
         }
+
         .login-container {
             max-width: 400px;
             margin: auto;
@@ -59,45 +58,51 @@ $conn->close();
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .login-container h2 {
             text-align: center;
             color: #007570;
         }
+
         .btn-custom {
             background-color: #007570;
             color: white;
         }
+
         .btn-custom:hover {
             background-color: #07AF8B;
         }
+
         .alert-custom {
             background-color: #f72585;
             color: white;
         }
     </style>
 </head>
+
 <body>
 
-<div class="login-container">
-    <h2>Receptionist Login</h2>
+    <div class="login-container">
+        <h2>Receptionist Login</h2>
 
-    <?php if (!empty($error_message)): ?>
-        <div class="alert alert-custom text-center"><?= $error_message ?></div>
-    <?php endif; ?>
+        <?php if (!empty($error_message)): ?>
+            <div class="alert alert-custom text-center"><?= $error_message ?></div>
+        <?php endif; ?>
 
-    <form method="POST">
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-custom w-100">Login</button>
-    </form>
-</div>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-custom w-100">Login</button>
+        </form>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

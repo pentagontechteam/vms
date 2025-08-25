@@ -7,10 +7,7 @@ if (!isset($_SESSION['receptionist_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 $group_id = isset($_GET['group_id']) ? $conn->real_escape_string($_GET['group_id']) : '';
 
@@ -41,31 +38,35 @@ if (empty($group_members)) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Group Visitor Cards - <?= htmlspecialchars($group_id) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    
+
     <style>
         @media print {
-            @page { 
-                size: A4; 
-                margin: 10mm; 
+            @page {
+                size: A4;
+                margin: 10mm;
             }
-            body { 
-                print-color-adjust: exact; 
-                -webkit-print-color-adjust: exact; 
+
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
             }
-            .page-break { 
-                page-break-after: always; 
+
+            .page-break {
+                page-break-after: always;
             }
-            .no-print { 
-                display: none; 
+
+            .no-print {
+                display: none;
             }
         }
-        
+
         .rotate-text {
             writing-mode: vertical-lr;
             text-orientation: mixed;
@@ -81,16 +82,48 @@ if (empty($group_members)) {
             border-width: 2px;
         }
 
-        .top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
-        .top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
-        .bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
-        .bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+        .top-left {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+        }
 
-        .venue-font { font-family: 'Playfair Display', serif; }
-        .text-font { font-family: 'Montserrat', sans-serif; }
-        .pass-body { background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%); }
+        .top-right {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .bottom-left {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+        }
+
+        .bottom-right {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+        }
+
+        .venue-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .text-font {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .pass-body {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%);
+        }
     </style>
 </head>
+
 <body class="bg-gray-100">
     <div class="no-print text-center p-4">
         <h1 class="text-2xl font-bold mb-4">Group Visitor Cards - <?= htmlspecialchars($group_id) ?></h1>
@@ -125,7 +158,7 @@ if (empty($group_members)) {
                         <div class="flex items-center justify-center mb-6">
                             <img src="assets/logo-green-yellow.png" alt="Logo" class="max-w-[180px] h-auto">
                         </div>
-                        
+
                         <!-- Venue Information -->
                         <div class="mb-6 text-center">
                             <div class="text-xl font-bold text-gray-800 mb-2 venue-font">
@@ -159,7 +192,7 @@ if (empty($group_members)) {
                         <div class="absolute bottom-0 right-0 z-10">
                             <img src="assets/Picture3.png" alt="Bottom Logo" class="h-[6rem] opacity-30" />
                         </div>
-                        
+
                         <!-- Subtle pattern overlay -->
                         <div class="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMzAgMTVMMTUgMzAgMzAgNDUgNDUgMzB6IiBzdHJva2U9IiMwZDk0ODgiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+PC9zdmc+')]"></div>
                     </div>
@@ -179,4 +212,5 @@ if (empty($group_members)) {
         };
     </script>
 </body>
+
 </html>

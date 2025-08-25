@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 session_start();
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
+require 'db_connection.php';
 
 // Check the connection
 if ($conn->connect_error) {
@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->fetch() && password_verify($password, $hashed_password)) {
         $_SESSION['employee_id'] = $id; // Store employee ID in session
         $_SESSION['name'] = $name; // Store name in session
-        
+
         // Check if profile needs completion
         if ($profile_completed == 0) {
             header("Location: update_profile.php"); // Redirect to profile completion
@@ -44,11 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $message = "Invalid credentials.";
         $message_class = "error";
-        
+
         header("Location: index.html?error=1");
         exit();
-
-        
     }
 
     $stmt->close();
@@ -57,6 +55,7 @@ $conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -216,6 +215,7 @@ $conn->close();
         }
     </style>
 </head>
+
 <body>
     <div class="logo">
         <a href="index.html">
@@ -249,4 +249,5 @@ $conn->close();
         </div>-->
     </div>
 </body>
+
 </html>

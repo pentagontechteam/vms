@@ -1,4 +1,5 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -11,12 +12,7 @@ require 'PHPMailer/src/SMTP.php';
 require 'PHPMailer/src/Exception.php';
 
 // Database connection
-$conn = new mysqli("localhost", "aatcabuj_admin", "Sgt.pro@501", "aatcabuj_visitors_version_2");
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require 'db_connection.php';
 
 // Check if 'id' is set in the URL
 if (isset($_GET['id'])) {
@@ -36,12 +32,12 @@ if (isset($_GET['id'])) {
 
     // Update visitor status and assign QR code
     $stmt = $conn->prepare(
-    "UPDATE visitors
+        "UPDATE visitors
      SET status = 'approved',   
          approved = 1,         
          qr_code = ?
      WHERE id = ?"
-);
+    );
     $stmt->bind_param("si", $qr_code, $id);
     $stmt->execute();
 
@@ -55,7 +51,7 @@ if (isset($_GET['id'])) {
         $visitor = $result->fetch_assoc();
         $visitor_name = $visitor['name'];
         $visitor_email = $visitor['email'];
-        $host_name = $visitor['host_name']; 
+        $host_name = $visitor['host_name'];
         $visit_date = date('d-m-Y', strtotime($visitor['visit_date']));
         $visit_time = $visitor['time_of_visit'];
         $visit_location = $visitor['floor_of_visit'];
@@ -64,7 +60,7 @@ if (isset($_GET['id'])) {
 
         // Send email with PHPMailer
         $mail = new PHPMailer(true);
-        
+
         try {
             // SMTP Configuration
             $mail->isSMTP();
@@ -79,7 +75,7 @@ if (isset($_GET['id'])) {
             $mail->setFrom('support@aatcabuja.com.ng', 'Abuja-AATC');
             $mail->addAddress($visitor_email);
             $mail->Subject = "Appointment Confirmed";
-            
+
             // HTML Email Content
             $mail->isHTML(true);
             $mail->Body = "
@@ -215,21 +211,21 @@ if (isset($_GET['id'])) {
                 </body>
                 </html>
             ";
-            
+
             // Add embedded QR code image
             $mail->addEmbeddedImage($qr_code_path, 'qr_code');
             // Add embedded logo image
             $mail->addEmbeddedImage('assets/qr_code_gfx.jpg', 'logo_image');
-            
+
             // Attach the QR code image
             $mail->addAttachment($qr_code_path, 'Your_QR_Code.png');
 
             // Send Email
             $mail->send();
-            
+
             if (!empty($visitor['host_email'])) {
                 $host_email = $visitor['host_email'];
-    
+
                 $host_mail = new PHPMailer(true);
                 try {
                     // SMTP Configuration
@@ -316,7 +312,6 @@ if (isset($_GET['id'])) {
             </body>
             </html>
             ';
-            
         } catch (Exception $e) {
             // Display error message with Bootstrap styling
             echo '
@@ -423,4 +418,3 @@ if (isset($_GET['id'])) {
     </html>
     ';
 }
-?>

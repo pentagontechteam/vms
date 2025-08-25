@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+require 'db_connection.php';
 
 $query = "SELECT * FROM visitors WHERE status = 'checked_in' ORDER BY check_in_time DESC";
 $result = mysqli_query($conn, $query);
